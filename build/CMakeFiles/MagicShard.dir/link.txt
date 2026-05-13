@@ -1,0 +1,3 @@
+D:\Strawberry_Perl\c\bin\cmake.exe -E rm -f CMakeFiles\MagicShard.dir/objects.a
+D:\mingw\x86_64-8.1.0-release-posix-seh-rt_v6-rev0\bin\ar.exe qc CMakeFiles\MagicShard.dir/objects.a @CMakeFiles\MagicShard.dir\objects1.rsp
+D:\mingw\x86_64-8.1.0-release-posix-seh-rt_v6-rev0\bin\c++.exe -Wl,--whole-archive CMakeFiles\MagicShard.dir/objects.a -Wl,--no-whole-archive -o MagicShard.exe -Wl,--out-implib,libMagicShard.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\MagicShard.dir\linkLibs.rsp
