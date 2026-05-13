@@ -1,0 +1,73 @@
+_deps/assimp-build/code/CMakeFiles/assimp.dir/__/contrib/Open3DGC/o3dgcTriangleFans.cpp.obj: \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcTriangleFans.cpp \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcTriangleFans.h \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcCommon.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/stdio.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/crtdefs.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/_mingw.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/_mingw_mac.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/_mingw_secapi.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/vadefs.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/sdks/_mingw_directx.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/_mingw_print_push.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/_mingw_off_t.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/swprintf.inl \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/sec_api/stdio_s.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/_mingw_print_pop.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/string.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/sec_api/string_s.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/assert.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/stdlib.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdlib \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/stdlib.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed/limits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed/syslimits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/limits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/sec_api/stdlib_s.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/malloc.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/std_abs.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/math.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cmath \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/cpp_type_traits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/type_traits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/x86_64-w64-mingw32/include/math.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/specfun.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_algobase.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/functexcept.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception_defines.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/numeric_traits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_pair.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/move.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/concept_check.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/type_traits \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_iterator_base_types.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_iterator_base_funcs.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/debug/assertions.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_iterator.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/ptr_traits.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/debug/debug.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/predefined_ops.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/limits \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/gamma.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/special_function_util.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/bessel_function.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/special_function_util.h \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/beta_function.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/ell_integral.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/exp_integral.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/hypergeometric.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/legendre_function.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/modified_bessel_func.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/poly_hermite.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/poly_laguerre.tcc \
+ D:/mingw/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/tr1/riemann_zeta.tcc \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcVector.h \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcVector.inl \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcBinaryStream.h \
+ D:\VScode\ Projects\Game_Development\build\_deps\assimp-src\contrib\Open3DGC\o3dgcArithmeticCodec.h \
+ D:/VScode\ Projects/Game_Development/build/_deps/assimp-src/include/assimp/defs.h \
+ D:/VScode\ Projects/Game_Development/build/_deps/assimp-build/include/assimp/config.h
