@@ -238,7 +238,7 @@ int main() {
                 float footOff = 1.847f * pH;
                 Vector3 charPos = {pPos.x, pPos.y + footOff, pPos.z};
                 float faceAngle = (moveLen > 0 ? atan2f(move.x, move.z) : atan2f(fwd.x, fwd.z)) * RAD2DEG - 90.0f;
-                DrawModelEx(playerModel, charPos, {0,1,0}, faceAngle, {pH,pH,pH}, WHITE);
+                DrawModelEx(playerModel, charPos, {0,1,0}, faceAngle, {pH*1.5f,pH*1.5f,pH*1.5f}, WHITE);
             } else {
                 DrawCube({pPos.x, pPos.y + pH/2, pPos.z}, 0.55f, pH, 0.55f, {220,50,50,255});
             }
