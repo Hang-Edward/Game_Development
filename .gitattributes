@@ -1,1 +1,8 @@
 *.glb filter=lfs diff=lfs merge=lfs -text
+
+# 告诉 GitHub 不要把 build/ 下的文件计入语言统计
+build/* linguist-vendored
+
+# 明确指定 src/ 下的 .cpp 和 .h 文件是项目的主要语言
+src/*.cpp linguist-language=C++
+src/*.h linguist-language=C++
