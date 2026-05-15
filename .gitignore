@@ -38,3 +38,14 @@ CTestTestfile.cmake
 *_backup.glb
 *_backup.*
 *.bak
+
+# 你的问题所在
+_deps/
+*.ninja
+.ninja_log
+.ninja_lock
+
+# 其他常见遗漏
+CMakeUserPresets.json          # 包含本地路径，不应提交
+.vs/                            # Visual Studio 会生成
+venv/ env/                      # 其他虚拟环境目录名
