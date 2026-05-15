@@ -126,10 +126,16 @@ int main() {
         activeModel = &standModel;
         hasChar = true;
     }
+        Matrix *standMat = standModel.boneMatrices, *walkMat = walkModel.boneMatrices, *runMat = runModel.boneMatrices;
 
     // ---- 攻击 ----
     float atkTimer = 0, atkCooldown = 0.35f, swingAnim = 0;
     bool hitThisAttack = false;
+
+    // anim frame ranges: stand 32-80, walk 178-203, run 82-97
+    int standStart = 32, standEnd = 80;
+    int walkStart = 178, walkEnd = 203;
+    int runStart = 82, runEnd = 97;
 
     // ---- 字体 ----
     Font cnFont = {0};
@@ -214,11 +220,17 @@ int main() {
 
         // ---- 动画 ----
         if (hasChar) {
-            ModelAnimation *cur = 0; int maxF = 0;
-            if (sprint && runCount > 0)       { cur = &runAnims[0];  animMaxFrames = runAnims[0].keyframeCount; activeModel = &runModel; }
-            else if (moveLen > 0 && walkCount > 0) { cur = &walkAnims[0]; animMaxFrames = walkAnims[0].keyframeCount; activeModel = &walkModel; }
-            else if (standCount > 0)          { cur = &standAnims[0]; animMaxFrames = standAnims[0].keyframeCount; activeModel = &standModel; }
-            if (cur && animMaxFrames > 0) { animFrame = (animFrame + 1) % animMaxFrames; UpdateModelAnimation(*activeModel, *cur, animFrame); }
+            ModelAnimation *cur = 0; int maxF = 0; int startFrame = 0;
+            if (sprint && runCount > 0)       { cur = &runAnims[0];  startFrame = runStart; animMaxFrames = runEnd; activeModel = &runModel; }
+            else if (moveLen > 0 && walkCount > 0) { cur = &walkAnims[0]; startFrame = walkStart; animMaxFrames = walkEnd; activeModel = &walkModel; }
+            else if (standCount > 0)          { cur = &standAnims[0]; startFrame = standStart; animMaxFrames = standEnd; activeModel = &standModel; }
+            if (cur && animMaxFrames > startFrame) {
+                animFrame = startFrame + ((animFrame - startFrame + 1) % (animMaxFrames - startFrame + 1));
+                if (animFrame < startFrame) animFrame = startFrame;
+                activeModel->boneMatrices = (activeModel==&standModel?standMat:activeModel==&walkModel?walkMat:runMat);
+                UpdateModelAnimation(*activeModel, *cur, animFrame);
+                activeModel->boneMatrices = NULL;
+            }
         }
 
         // ---- 相机 ----
@@ -249,7 +261,7 @@ int main() {
                 while (diff < -PI) diff += 2*PI;
                 smoothAng += diff * dt * 12.0f;
                 float faceAngle = smoothAng * RAD2DEG - 90.0f;
-                DrawModelEx(*activeModel, charPos, {0,1,0}, faceAngle, {pH*1.5f,pH*1.5f,pH*1.5f}, WHITE);
+                DrawModelEx(*activeModel, charPos, {0,1,0}, faceAngle, {pH*0.075f,pH*0.075f,pH*0.075f}, WHITE);
             } else {
                 DrawCube({pPos.x, pPos.y + pH/2, pPos.z}, 0.55f, pH, 0.55f, {220,50,50,255});
             }

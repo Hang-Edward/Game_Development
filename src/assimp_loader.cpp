@@ -161,6 +161,14 @@ static Mesh aiMeshToRaylib(aiMesh *aiM, const aiScene *scene,
         }
     }
 
+    if (m.boneIndices) {
+        m.animVertices = (float *)RL_MALLOC(m.vertexCount * 3 * sizeof(float));
+        memcpy(m.animVertices, m.vertices, m.vertexCount * 3 * sizeof(float));
+        if (m.normals) {
+            m.animNormals = (float *)RL_MALLOC(m.vertexCount * 3 * sizeof(float));
+            memcpy(m.animNormals, m.normals, m.vertexCount * 3 * sizeof(float));
+        }
+    }
     UploadMesh(&m, false);
     return m;
 }
