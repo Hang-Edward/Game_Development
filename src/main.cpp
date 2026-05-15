@@ -71,6 +71,7 @@ struct TerrainCollision {
 int main() {
     const int W = 1280, H = 720;
     SetConfigFlags(FLAG_MSAA_4X_HINT);
+    SetTraceLogLevel(LOG_WARNING);
     InitWindow(W, H, "魔法碎片：暗蚀纪元");
 
     Camera3D cam = {0};
@@ -115,6 +116,9 @@ int main() {
     ModelAnimation *standAnims=0, *walkAnims=0, *runAnims=0;
     int standCount=0, walkCount=0, runCount=0, animFrame = 0, animMaxFrames = 1;
     bool hasChar = false;
+    int standStart = 0, standEnd = 0;
+    int walkStart = 0, walkEnd = 0;
+    int runStart = 0, runEnd = 0;
     if (FileExists("../assets/models/character/stand.glb")) {
         const char *b = "../assets/models/character";
         standModel = LoadModelAssimp(TextFormat("%s/stand.glb", b));
@@ -125,6 +129,10 @@ int main() {
         runAnims   = LoadModelAnimationsAssimp(TextFormat("%s/run.glb", b), &runCount);
         activeModel = &standModel;
         hasChar = true;
+        // clamp frame ranges to actual keyframeCount
+        if (standCount > 0) standEnd = standAnims[0].keyframeCount - 1;
+        if (walkCount > 0)  walkEnd  = walkAnims[0].keyframeCount - 1;
+        if (runCount > 0)   runEnd   = runAnims[0].keyframeCount - 1;
     }
         Matrix *standMat = standModel.boneMatrices, *walkMat = walkModel.boneMatrices, *runMat = runModel.boneMatrices;
 
@@ -132,10 +140,6 @@ int main() {
     float atkTimer = 0, atkCooldown = 0.35f, swingAnim = 0;
     bool hitThisAttack = false;
 
-    // anim frame ranges: stand 32-80, walk 178-203, run 82-97
-    int standStart = 32, standEnd = 80;
-    int walkStart = 178, walkEnd = 203;
-    int runStart = 82, runEnd = 97;
 
     // ---- 字体 ----
     Font cnFont = {0};

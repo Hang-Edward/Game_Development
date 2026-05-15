@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstring>
 #include <map>
+#include <set>
 
 // ---------------------------------------------------------------------------
 // 工具：Assimp 矩阵 → raylib 矩阵
@@ -141,11 +142,12 @@ static Mesh aiMeshToRaylib(aiMesh *aiM, const aiScene *scene,
 
         for (unsigned b = 0; b < aiM->mNumBones; b++) {
             aiBone *bone = aiM->mBones[b];
-            int boneIdx = b;
+            int boneIdx = -1;
             if (boneNameToIdx) {
                 auto it = boneNameToIdx->find(bone->mName.C_Str());
                 if (it != boneNameToIdx->end()) boneIdx = it->second;
             }
+            if (boneIdx < 0) continue; // 跳过不在主骨架中的骨骼（如影子捕捉器）
             for (unsigned w = 0; w < bone->mNumWeights; w++) {
                 aiVertexWeight *vw = &bone->mWeights[w];
                 unsigned vid = vw->mVertexId;
@@ -174,46 +176,53 @@ static Mesh aiMeshToRaylib(aiMesh *aiM, const aiScene *scene,
 }
 
 // ---------------------------------------------------------------------------
-// 递归构建骨骼信息
+// 工具：局部→模型空间姿势转换（要求父索引 < 子索引）
 // ---------------------------------------------------------------------------
-static void BuildBoneHierarchy(aiNode *node, const aiScene *scene,
-                               std::vector<BoneInfo> &boneInfos,
-                               std::vector<Transform> &bindPose,
-                               std::map<std::string, int> &nameToIdx,
-                               int parentIdx)
+static void ConvertPoseToModelSpace(BoneInfo *bones, int boneCount, Transform *transforms)
 {
-    // 检查这个 node 是否是动画骨骼
-    // Assimp 把骨骼存储为 mesh->mBones[]，但节点本身是场景树的一部分
-    // 我们通过遍历 scene->mRootNode 来处理所有节点
-
-    // 先处理当前节点
-    std::string name = node->mName.C_Str();
-    int myIdx = -1;
-
-    if (nameToIdx.find(name) != nameToIdx.end()) {
-        myIdx = nameToIdx[name];
-    } else {
-        myIdx = (int)boneInfos.size();
-        nameToIdx[name] = myIdx;
-        BoneInfo bi;
-        memset(bi.name, 0, 32);
-        strncpy(bi.name, name.c_str(), 31);
-        bi.parent = parentIdx;
-        boneInfos.push_back(bi);
-
-        // 绑定位姿（从节点变换）
-        Transform t;
-        aiVector3D pos; aiQuaternion rot; aiVector3D scale;
-        node->mTransformation.Decompose(scale, rot, pos);
-        t.translation = AiToRl(pos);
-        t.rotation = AiToRl(rot);
-        t.scale = AiToRl(scale);
-        bindPose.push_back(t);
+    // DFS guarantees parent < child, single pass suffices
+    for (int i = 0; i < boneCount; i++) {
+        int p = bones[i].parent;
+        if (p < 0 || p >= i) continue;
+        Transform *parentT = &transforms[p];
+        Transform *t = &transforms[i];
+        t->rotation = QuaternionMultiply(parentT->rotation, t->rotation);
+        t->scale = Vector3Multiply(t->scale, parentT->scale);
+        t->translation = Vector3Multiply(t->translation, parentT->scale);
+        t->translation = Vector3RotateByQuaternion(t->translation, parentT->rotation);
+        t->translation = Vector3Add(t->translation, parentT->translation);
     }
+}
 
-    // 递归处理子节点
-    for (unsigned i = 0; i < node->mNumChildren; i++)
-        BuildBoneHierarchy(node->mChildren[i], scene, boneInfos, bindPose, nameToIdx, myIdx);
+// ---------------------------------------------------------------------------
+// 工具：场景图 DFS 分配骨骼索引（拓扑有序：父 < 子）
+// ---------------------------------------------------------------------------
+static void AssignBoneIndicesDFS(
+    const std::set<std::string> &boneNames,
+    const aiScene *scene,
+    std::map<std::string, int> &boneNameToIdx,
+    std::vector<BoneInfo> &boneInfos)
+{
+    struct DFSFrame { aiNode *node; int parentBoneIdx; };
+    std::vector<DFSFrame> stack;
+    stack.push_back({ scene->mRootNode, -1 });
+    while (!stack.empty()) {
+        DFSFrame f = stack.back(); stack.pop_back();
+        std::string name = f.node->mName.C_Str();
+        bool isBone = (boneNames.find(name) != boneNames.end());
+        int myBoneIdx = -1;
+        if (isBone) {
+            myBoneIdx = (int)boneInfos.size();
+            boneNameToIdx[name] = myBoneIdx;
+            BoneInfo bi;
+            memset(bi.name, 0, 32);
+            strncpy(bi.name, name.c_str(), 31);
+            bi.parent = f.parentBoneIdx;
+            boneInfos.push_back(bi);
+        }
+        for (unsigned ci = 0; ci < f.node->mNumChildren; ci++)
+            stack.push_back({ f.node->mChildren[ci], (myBoneIdx >= 0) ? myBoneIdx : f.parentBoneIdx });
+    }
 }
 
 // ===========================================================================
@@ -235,8 +244,7 @@ Model LoadModelAssimp(const char *fileName)
         return model;
     }
 
-    TraceLog(LOG_INFO, "ASSIMP: Loaded %s (%d meshes, %d materials, %d animations, %d textures)",
-        fileName, scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations, scene->mNumTextures);
+    //TraceLog(LOG_INFO, "ASSIMP: Loaded %s (%d meshes, %d materials, %d animations)", fileName, scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations);
 
     // -- 材质 --
     int matCount = (scene->mNumMaterials > 0) ? (int)scene->mNumMaterials : 1;
@@ -250,28 +258,45 @@ Model LoadModelAssimp(const char *fileName)
     if (scene->mNumMaterials == 0)
         model.materials[0] = LoadMaterialDefault();
 
-
-
     // -- 骨骼信息 --
-    // 收集所有涉及骨骼的节点名称
     std::map<std::string, int> boneNameToIdx;
     std::vector<BoneInfo> boneInfos;
     std::vector<Transform> bindPoses;
 
-    // 从所有网格收集骨骼名称
+    // 从骨骼数 >= 3 的网格收集骨骼（排除影子捕捉器等辅助网格）
+    std::set<std::string> allBoneNames;
+    std::map<std::string, aiMatrix4x4> boneOffsets;
     for (unsigned i = 0; i < scene->mNumMeshes; i++) {
         aiMesh *aiM = scene->mMeshes[i];
-        if (!aiM->HasBones()) continue;
+        if (!aiM->HasBones() || aiM->mNumBones < 3) continue;
         for (unsigned b = 0; b < aiM->mNumBones; b++) {
             std::string name = aiM->mBones[b]->mName.C_Str();
-            if (boneNameToIdx.find(name) == boneNameToIdx.end()) {
-                int idx = (int)boneInfos.size();
-                boneNameToIdx[name] = idx;
-                BoneInfo bi;
-                memset(bi.name, 0, 32);
-                strncpy(bi.name, name.c_str(), 31);
-                bi.parent = -1; // 稍后修正
-                boneInfos.push_back(bi);
+            allBoneNames.insert(name);
+            if (boneOffsets.find(name) == boneOffsets.end())
+                boneOffsets[name] = aiM->mBones[b]->mOffsetMatrix;
+        }
+    }
+
+    if (!allBoneNames.empty()) {
+        // DFS 分配索引（拓扑有序）
+        AssignBoneIndicesDFS(allBoneNames, scene, boneNameToIdx, boneInfos);
+
+        // 按 DFS 顺序提取绑定位姿（mOffsetMatrix.Inverse → 模型空间绑定位姿）
+        bindPoses.resize(boneInfos.size());
+        for (auto &kv : boneOffsets) {
+            auto it = boneNameToIdx.find(kv.first);
+            if (it == boneNameToIdx.end()) continue;
+            int idx = it->second;
+            aiMatrix4x4 invBind = kv.second;
+            aiMatrix4x4 bind = invBind;
+            bind.Inverse();
+            aiVector3D pos; aiQuaternion rot; aiVector3D scale;
+            bind.Decompose(scale, rot, pos);
+            bindPoses[idx].translation = AiToRl(pos);
+            bindPoses[idx].rotation = AiToRl(rot);
+            bindPoses[idx].scale = AiToRl(scale);
+        }
+    }
 
     // -- 网格 --
     model.meshCount = (int)scene->mNumMeshes;
@@ -279,41 +304,8 @@ Model LoadModelAssimp(const char *fileName)
 
     for (unsigned i = 0; i < scene->mNumMeshes; i++) {
         model.meshes[i] = aiMeshToRaylib(scene->mMeshes[i], scene, &boneNameToIdx);
-        // 每个网格引用自己的材质
         model.meshMaterial[i] = (int)scene->mMeshes[i]->mMaterialIndex;
     }
-                // 绑定位姿：从骨骼的逆绑定矩阵反算
-                aiMatrix4x4 invBind = aiM->mBones[b]->mOffsetMatrix;
-                aiMatrix4x4 bind = invBind;
-                bind.Inverse();
-                aiVector3D pos; aiQuaternion rot; aiVector3D scale;
-                bind.Decompose(scale, rot, pos);
-                Transform t;
-                t.translation = AiToRl(pos);
-                t.rotation = AiToRl(rot);
-                t.scale = AiToRl(scale);
-                bindPoses.push_back(t);
-            }
-        }
-    }
-
-    // -- Fix bone parents from scene tree --
-    struct StackFrame { aiNode *node; int parentBoneIdx; };
-    std::vector<StackFrame> stack;
-    stack.push_back({ scene->mRootNode, -1 });
-    while (!stack.empty()) {
-        StackFrame f = stack.back();
-        stack.pop_back();
-        std::string name = f.node->mName.C_Str();
-        auto it = boneNameToIdx.find(name);
-        int myBoneIdx = (it != boneNameToIdx.end()) ? it->second : -1;
-        if (myBoneIdx >= 0 && f.parentBoneIdx >= 0 && boneInfos[myBoneIdx].parent < 0)
-            boneInfos[myBoneIdx].parent = f.parentBoneIdx;
-        for (unsigned ci = 0; ci < f.node->mNumChildren; ci++)
-            stack.push_back({ f.node->mChildren[ci], (myBoneIdx >= 0) ? myBoneIdx : f.parentBoneIdx });
-    }
-    // 递归遍历场景树，为 boneInfos 中的每个节点找父亲
-
 
     // -- 根节点变换（标准化去缩放） --
     if (scene->mRootNode) {
@@ -324,11 +316,11 @@ Model LoadModelAssimp(const char *fileName)
         float sc = (Vector3Length({m.m0,m.m1,m.m2}) +
                     Vector3Length({m.m4,m.m5,m.m6}) +
                     Vector3Length({m.m8,m.m9,m.m10})) / 3.0f;
-        if (fabsf(sc - 1.0f) > 0.001f && model.skeleton.boneCount > 0) {
-            for (int i = 0; i < model.skeleton.boneCount; i++) {
-                model.skeleton.bindPose[i].scale.x *= sc;
-                model.skeleton.bindPose[i].scale.y *= sc;
-                model.skeleton.bindPose[i].scale.z *= sc;
+        if (fabsf(sc - 1.0f) > 0.001f && !bindPoses.empty()) {
+            for (size_t i = 0; i < bindPoses.size(); i++) {
+                bindPoses[i].scale.x *= sc;
+                bindPoses[i].scale.y *= sc;
+                bindPoses[i].scale.z *= sc;
             }
         }
         model.transform = MatrixIdentity();
@@ -339,26 +331,26 @@ Model LoadModelAssimp(const char *fileName)
         model.transform.m15 = m.m15;
     }
 
-    // 写入 Model 骨架
+    // 写入 Model 骨架（bindPose 已是模型空间，无需 ConvertPoseToModelSpace）
     model.skeleton.boneCount = (int)boneInfos.size();
     if (model.skeleton.boneCount > 0) {
         model.skeleton.bones = (BoneInfo *)RL_CALLOC(model.skeleton.boneCount, sizeof(BoneInfo));
         memcpy(model.skeleton.bones, boneInfos.data(), model.skeleton.boneCount * sizeof(BoneInfo));
-        // bindPose
+
+        //TraceLog(LOG_INFO, "ASSIMP: %s skeleton: %d bones", fileName, model.skeleton.boneCount);
+
         model.skeleton.bindPose = (Transform *)RL_CALLOC(model.skeleton.boneCount, sizeof(Transform));
         memcpy(model.skeleton.bindPose, bindPoses.data(), model.skeleton.boneCount * sizeof(Transform));
 
-        // currentPose
         model.currentPose = (Transform *)RL_CALLOC(model.skeleton.boneCount, sizeof(Transform));
         memcpy(model.currentPose, bindPoses.data(), model.skeleton.boneCount * sizeof(Transform));
 
-        // boneMatrices
         model.boneMatrices = (Matrix *)RL_CALLOC(model.skeleton.boneCount, sizeof(Matrix));
         for (int i = 0; i < model.skeleton.boneCount; i++)
             model.boneMatrices[i] = MatrixIdentity();
     }
 
-    TraceLog(LOG_INFO, "ASSIMP: Model loaded: %d bones", model.skeleton.boneCount);
+    //TraceLog(LOG_INFO, "ASSIMP: Model loaded: %d bones total", model.skeleton.boneCount);
     return model;
 }
 
@@ -380,17 +372,19 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
 
     if (scene->mNumAnimations == 0) return NULL;
 
-    // 先建立 bone name → index 映射（和 LoadModelAssimp 一致的方式）
+    // ---- 建立骨骼映射（与 LoadModelAssimp 一致：所有网格 + DFS 拓扑序） ----
     std::map<std::string, int> boneMap;
-    for (unsigned m = 0; m < scene->mNumMeshes; m++) {
-        aiMesh *aiM = scene->mMeshes[m];
-        if (!aiM->HasBones()) continue;
-        for (unsigned b = 0; b < aiM->mNumBones; b++) {
-            std::string name = aiM->mBones[b]->mName.C_Str();
-            if (boneMap.find(name) == boneMap.end())
-                boneMap[name] = (int)boneMap.size();
-        }
+    std::vector<BoneInfo> boneInfos;
+
+    std::set<std::string> allBoneNames;
+    for (unsigned i = 0; i < scene->mNumMeshes; i++) {
+        aiMesh *aiM = scene->mMeshes[i];
+        if (!aiM->HasBones() || aiM->mNumBones < 3) continue;
+        for (unsigned b = 0; b < aiM->mNumBones; b++)
+            allBoneNames.insert(aiM->mBones[b]->mName.C_Str());
     }
+    if (!allBoneNames.empty())
+        AssignBoneIndicesDFS(allBoneNames, scene, boneMap, boneInfos);
 
     // 为每段动画创建一个 ModelAnimation
     *animCount = (int)scene->mNumAnimations;
@@ -404,10 +398,11 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
         strncpy(rlAnim->name, aiAnim->mName.C_Str(), 31);
         rlAnim->boneCount = (int)boneMap.size();
 
-        // 计算帧数（取所有 channel 的最大关键帧数）
+        // compute maxFrames from matched channels only
         int maxFrames = 0;
         for (unsigned c = 0; c < aiAnim->mNumChannels; c++) {
             aiNodeAnim *ch = aiAnim->mChannels[c];
+            if (boneMap.find(ch->mNodeName.C_Str()) == boneMap.end()) continue;
             maxFrames = std::max(maxFrames, (int)ch->mNumPositionKeys);
             maxFrames = std::max(maxFrames, (int)ch->mNumRotationKeys);
             maxFrames = std::max(maxFrames, (int)ch->mNumScalingKeys);
@@ -415,12 +410,11 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
         if (maxFrames < 1) maxFrames = 1;
 
         rlAnim->keyframeCount = maxFrames;
-        rlAnim->keyframePoses = (ModelAnimPose *)RL_CALLOC(maxFrames, sizeof(ModelAnimPose)); // each frame: Transform[]
+        rlAnim->keyframePoses = (ModelAnimPose *)RL_CALLOC(maxFrames, sizeof(ModelAnimPose));
 
-        // 为每帧分配 Transform 数组
+        // 为每帧分配 Transform 数组（初始化为局部空间单位姿势）
         for (int f = 0; f < maxFrames; f++) {
             rlAnim->keyframePoses[f] = (Transform *)RL_CALLOC(rlAnim->boneCount, sizeof(Transform));
-            // 默认值
             for (int i = 0; i < rlAnim->boneCount; i++) {
                 rlAnim->keyframePoses[f][i].translation = {0,0,0};
                 rlAnim->keyframePoses[f][i].rotation = {0,0,0,1};
@@ -428,7 +422,7 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
             }
         }
 
-        // 填充每个 channel 的关键帧数据
+        // 填充每个 channel 的关键帧数据（局部空间）
         for (unsigned c = 0; c < aiAnim->mNumChannels; c++) {
             aiNodeAnim *ch = aiAnim->mChannels[c];
             std::string nodeName = ch->mNodeName.C_Str();
@@ -439,19 +433,16 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
             for (int f = 0; f < maxFrames; f++) {
                 Transform *t = &rlAnim->keyframePoses[f][boneIdx];
 
-                // Translation
                 if (ch->mNumPositionKeys > 0) {
                     unsigned keyIdx = (ch->mNumPositionKeys == 1) ? 0
                         : (unsigned)((float)f / (maxFrames-1) * (ch->mNumPositionKeys-1) + 0.5f);
                     t->translation = AiToRl(ch->mPositionKeys[keyIdx].mValue);
                 }
-                // Rotation
                 if (ch->mNumRotationKeys > 0) {
                     unsigned keyIdx = (ch->mNumRotationKeys == 1) ? 0
                         : (unsigned)((float)f / (maxFrames-1) * (ch->mNumRotationKeys-1) + 0.5f);
                     t->rotation = AiToRl(ch->mRotationKeys[keyIdx].mValue);
                 }
-                // Scale（Assimp 正确处理 scale，不会压扁模型）
                 if (ch->mNumScalingKeys > 0) {
                     unsigned keyIdx = (ch->mNumScalingKeys == 1) ? 0
                         : (unsigned)((float)f / (maxFrames-1) * (ch->mNumScalingKeys-1) + 0.5f);
@@ -459,8 +450,14 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
                 }
             }
         }
+
+        // 将每帧从局部空间转换为模型空间（拓扑有序，父索引 < 子索引）
+        for (int f = 0; f < maxFrames; f++)
+            ConvertPoseToModelSpace(boneInfos.data(), (int)boneInfos.size(), rlAnim->keyframePoses[f]);
+
+        //TraceLog(LOG_INFO, "ASSIMP: Anim '%s' %d frames, %d/%d matched", rlAnim->name, maxFrames, channelsMatched, channelsTotal);
     }
 
-    TraceLog(LOG_INFO, "ASSIMP: Loaded %d animations (%d bones)", *animCount, (int)boneMap.size());
+    //TraceLog(LOG_INFO, "ASSIMP: Loaded %d animations (%d bones)", *animCount, (int)boneMap.size());
     return anims;
 }
