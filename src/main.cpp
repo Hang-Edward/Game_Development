@@ -110,16 +110,20 @@ int main() {
     float speed = BASE_SPEED;
 
     // ---- 角色模型 ----
-    Model playerModel = {0};
+    Model standModel = {0}, walkModel = {0}, runModel = {0};
+    Model *activeModel = 0;
     ModelAnimation *standAnims=0, *walkAnims=0, *runAnims=0;
-    int standCount=0, walkCount=0, runCount=0, animFrame = 0;
+    int standCount=0, walkCount=0, runCount=0, animFrame = 0, animMaxFrames = 1;
     bool hasChar = false;
     if (FileExists("../assets/models/character/stand.glb")) {
         const char *b = "../assets/models/character";
-        playerModel = LoadModelAssimp(TextFormat("%s/stand.glb", b));
+        standModel = LoadModelAssimp(TextFormat("%s/stand.glb", b));
+        walkModel  = LoadModelAssimp(TextFormat("%s/walk.glb", b));
+        runModel   = LoadModelAssimp(TextFormat("%s/run.glb", b));
         standAnims = LoadModelAnimationsAssimp(TextFormat("%s/stand.glb", b), &standCount);
         walkAnims  = LoadModelAnimationsAssimp(TextFormat("%s/walk.glb", b), &walkCount);
         runAnims   = LoadModelAnimationsAssimp(TextFormat("%s/run.glb", b), &runCount);
+        activeModel = &standModel;
         hasChar = true;
     }
 
@@ -211,10 +215,10 @@ int main() {
         // ---- 动画 ----
         if (hasChar) {
             ModelAnimation *cur = 0; int maxF = 0;
-            if (sprint && runCount > 0)       { cur = &runAnims[0];  maxF = runAnims[0].keyframeCount; }
-            else if (moveLen > 0 && walkCount > 0) { cur = &walkAnims[0]; maxF = walkAnims[0].keyframeCount; }
-            else if (standCount > 0)          { cur = &standAnims[0]; maxF = standAnims[0].keyframeCount; }
-            if (cur && maxF > 0) { animFrame = (animFrame + 1) % maxF; UpdateModelAnimation(playerModel, *cur, animFrame); }
+            if (sprint && runCount > 0)       { cur = &runAnims[0];  animMaxFrames = runAnims[0].keyframeCount; activeModel = &runModel; }
+            else if (moveLen > 0 && walkCount > 0) { cur = &walkAnims[0]; animMaxFrames = walkAnims[0].keyframeCount; activeModel = &walkModel; }
+            else if (standCount > 0)          { cur = &standAnims[0]; animMaxFrames = standAnims[0].keyframeCount; activeModel = &standModel; }
+            if (cur && animMaxFrames > 0) { animFrame = (animFrame + 1) % animMaxFrames; UpdateModelAnimation(*activeModel, *cur, animFrame); }
         }
 
         // ---- 相机 ----
@@ -237,8 +241,15 @@ int main() {
             if (hasChar) {
                 float footOff = 1.847f * pH;
                 Vector3 charPos = {pPos.x, pPos.y + footOff, pPos.z};
-                float faceAngle = (moveLen > 0 ? atan2f(move.x, move.z) : atan2f(fwd.x, fwd.z)) * RAD2DEG - 90.0f;
-                DrawModelEx(playerModel, charPos, {0,1,0}, faceAngle, {pH*1.5f,pH*1.5f,pH*1.5f}, WHITE);
+                // 平滑全向转向
+                float targetAng = (moveLen > 0 ? atan2f(move.x, move.z) : atan2f(fwd.x, fwd.z));
+                static float smoothAng = 0;
+                float diff = targetAng - smoothAng;
+                while (diff > PI) diff -= 2*PI;
+                while (diff < -PI) diff += 2*PI;
+                smoothAng += diff * dt * 12.0f;
+                float faceAngle = smoothAng * RAD2DEG - 90.0f;
+                DrawModelEx(*activeModel, charPos, {0,1,0}, faceAngle, {pH*1.5f,pH*1.5f,pH*1.5f}, WHITE);
             } else {
                 DrawCube({pPos.x, pPos.y + pH/2, pPos.z}, 0.55f, pH, 0.55f, {220,50,50,255});
             }
@@ -250,6 +261,7 @@ int main() {
                 DrawTextEx(cnFont, msg, {W/2 - sz.x/2, H/2 - sz.y/2}, 28, 1, WHITE);
             } else {
                 DrawFPS(20, H - 50);
+                DrawTextEx(cnFont, TextFormat("Anim: %d/%d", animFrame, animMaxFrames), {20, H-75}, 15, 1, Fade(WHITE,0.6f));
                 DrawTextEx(cnFont, "[WASD]移动 [Shift]冲刺 [Ctrl]蹲下 [左键]攻击 [右键]格挡 [滚轮]缩放", {W/2 - 400, H - 28}, 15, 1, Fade(WHITE,0.6f));
             }
         }
@@ -257,7 +269,9 @@ int main() {
     }
 
     if (hasChar) {
-        UnloadModel(playerModel);
+        UnloadModel(standModel);
+        UnloadModel(walkModel);
+        UnloadModel(runModel);
         if (standAnims) UnloadModelAnimations(standAnims, standCount);
         if (walkAnims)  UnloadModelAnimations(walkAnims, walkCount);
         if (runAnims)   UnloadModelAnimations(runAnims, runCount);

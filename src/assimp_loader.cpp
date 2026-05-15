@@ -434,19 +434,19 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
                 // Translation
                 if (ch->mNumPositionKeys > 0) {
                     unsigned keyIdx = (ch->mNumPositionKeys == 1) ? 0
-                        : (unsigned)((float)f / (maxFrames-1) * (ch->mNumPositionKeys-1));
+                        : (unsigned)((float)f / (maxFrames-1) * (ch->mNumPositionKeys-1) + 0.5f);
                     t->translation = AiToRl(ch->mPositionKeys[keyIdx].mValue);
                 }
                 // Rotation
                 if (ch->mNumRotationKeys > 0) {
                     unsigned keyIdx = (ch->mNumRotationKeys == 1) ? 0
-                        : (unsigned)((float)f / (maxFrames-1) * (ch->mNumRotationKeys-1));
+                        : (unsigned)((float)f / (maxFrames-1) * (ch->mNumRotationKeys-1) + 0.5f);
                     t->rotation = AiToRl(ch->mRotationKeys[keyIdx].mValue);
                 }
                 // Scale（Assimp 正确处理 scale，不会压扁模型）
                 if (ch->mNumScalingKeys > 0) {
                     unsigned keyIdx = (ch->mNumScalingKeys == 1) ? 0
-                        : (unsigned)((float)f / (maxFrames-1) * (ch->mNumScalingKeys-1));
+                        : (unsigned)((float)f / (maxFrames-1) * (ch->mNumScalingKeys-1) + 0.5f);
                     t->scale = AiToRl(ch->mScalingKeys[keyIdx].mValue);
                 }
             }
