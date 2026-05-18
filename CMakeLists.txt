@@ -42,3 +42,11 @@ add_executable(map2 src/main.cpp src/assimp_loader.cpp)
 target_link_libraries(map2 raylib assimp)
 target_include_directories(map2 PRIVATE src)
 target_compile_definitions(map2 PRIVATE MAP_FILE="map_02.glb")
+
+add_executable(char_test src/char_test.cpp src/assimp_loader.cpp)
+target_link_libraries(char_test raylib assimp)
+target_include_directories(char_test PRIVATE src)
+
+add_executable(glb_check src/glb_check.cpp)
+target_link_libraries(glb_check assimp)
+target_include_directories(glb_check PRIVATE src)

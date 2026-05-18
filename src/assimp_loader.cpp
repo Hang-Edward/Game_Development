@@ -7,6 +7,7 @@
 #include <cstring>
 #include <map>
 #include <set>
+#include <algorithm>
 
 // ---------------------------------------------------------------------------
 // 工具：Assimp 矩阵 → raylib 矩阵
@@ -263,12 +264,21 @@ Model LoadModelAssimp(const char *fileName)
     std::vector<BoneInfo> boneInfos;
     std::vector<Transform> bindPoses;
 
-    // 从骨骼数 >= 3 的网格收集骨骼（排除影子捕捉器等辅助网格）
+    // Collect from ALL meshes, sorted by bone count DESC (mesh with most bones first)
+    // This ensures the authoritative mOffsetMatrix is used for shared bones
     std::set<std::string> allBoneNames;
     std::map<std::string, aiMatrix4x4> boneOffsets;
-    for (unsigned i = 0; i < scene->mNumMeshes; i++) {
-        aiMesh *aiM = scene->mMeshes[i];
-        if (!aiM->HasBones() || aiM->mNumBones < 3) continue;
+    std::vector<int> sortedMeshes;
+    for (unsigned i = 0; i < scene->mNumMeshes; i++)
+        sortedMeshes.push_back(i);
+    std::sort(sortedMeshes.begin(), sortedMeshes.end(), [&](int a, int b) {
+        int ca = scene->mMeshes[a]->mNumBones;
+        int cb = scene->mMeshes[b]->mNumBones;
+        return ca != cb ? ca > cb : a < b;
+    });
+    for (int mi : sortedMeshes) {
+        aiMesh *aiM = scene->mMeshes[mi];
+        if (!aiM->HasBones()) continue;
         for (unsigned b = 0; b < aiM->mNumBones; b++) {
             std::string name = aiM->mBones[b]->mName.C_Str();
             allBoneNames.insert(name);
@@ -276,22 +286,19 @@ Model LoadModelAssimp(const char *fileName)
                 boneOffsets[name] = aiM->mBones[b]->mOffsetMatrix;
         }
     }
-
     if (!allBoneNames.empty()) {
-        // DFS 分配索引（拓扑有序）
         AssignBoneIndicesDFS(allBoneNames, scene, boneNameToIdx, boneInfos);
-
-        // 按 DFS 顺序提取绑定位姿（mOffsetMatrix.Inverse → 模型空间绑定位姿）
+        // extract bind poses
         bindPoses.resize(boneInfos.size());
         for (auto &kv : boneOffsets) {
             auto it = boneNameToIdx.find(kv.first);
             if (it == boneNameToIdx.end()) continue;
-            int idx = it->second;
             aiMatrix4x4 invBind = kv.second;
             aiMatrix4x4 bind = invBind;
             bind.Inverse();
             aiVector3D pos; aiQuaternion rot; aiVector3D scale;
             bind.Decompose(scale, rot, pos);
+            int idx = it->second;
             bindPoses[idx].translation = AiToRl(pos);
             bindPoses[idx].rotation = AiToRl(rot);
             bindPoses[idx].scale = AiToRl(scale);
@@ -331,9 +338,21 @@ Model LoadModelAssimp(const char *fileName)
         model.transform.m15 = m.m15;
     }
 
-    // 写入 Model 骨架（bindPose 已是模型空间，无需 ConvertPoseToModelSpace）
+    // 写入 Model 骨架（bindPose 已是模型空间）
     model.skeleton.boneCount = (int)boneInfos.size();
     if (model.skeleton.boneCount > 0) {
+        // 标准化绑定位姿缩放：提取统一缩放因子并移除
+        if (!bindPoses.empty()) {
+            float uniScale = fabsf(bindPoses[0].scale.x);
+            if (uniScale > 0.001f && fabsf(uniScale - 1.0f) > 0.001f) {
+                for (size_t i = 0; i < bindPoses.size(); i++) {
+                    bindPoses[i].scale.x /= uniScale;
+                    bindPoses[i].scale.y /= uniScale;
+                    bindPoses[i].scale.z /= uniScale;
+                }
+            }
+        }
+
         model.skeleton.bones = (BoneInfo *)RL_CALLOC(model.skeleton.boneCount, sizeof(BoneInfo));
         memcpy(model.skeleton.bones, boneInfos.data(), model.skeleton.boneCount * sizeof(BoneInfo));
 
@@ -377,9 +396,17 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
     std::vector<BoneInfo> boneInfos;
 
     std::set<std::string> allBoneNames;
-    for (unsigned i = 0; i < scene->mNumMeshes; i++) {
-        aiMesh *aiM = scene->mMeshes[i];
-        if (!aiM->HasBones() || aiM->mNumBones < 3) continue;
+    std::vector<int> animSorted;
+    for (unsigned i = 0; i < scene->mNumMeshes; i++)
+        animSorted.push_back(i);
+    std::sort(animSorted.begin(), animSorted.end(), [&](int a, int b) {
+        int ca = scene->mMeshes[a]->mNumBones;
+        int cb = scene->mMeshes[b]->mNumBones;
+        return ca != cb ? ca > cb : a < b;
+    });
+    for (int mi : animSorted) {
+        aiMesh *aiM = scene->mMeshes[mi];
+        if (!aiM->HasBones()) continue;
         for (unsigned b = 0; b < aiM->mNumBones; b++)
             allBoneNames.insert(aiM->mBones[b]->mName.C_Str());
     }
@@ -451,6 +478,38 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
             }
         }
 
+        // 修复根骨骼（parent=-1）局部姿势：在模型空间转换前乘以根节点变换
+        // 因为根骨骼的局部动画姿势缺少了场景根节点的变换（已烘焙入绑定位姿）
+        {
+            Matrix rootM = AiToRl(scene->mRootNode->mTransformation);
+            aiVector3D rPos2, rScale2; aiQuaternion rRot2;
+            scene->mRootNode->mTransformation.Decompose(rScale2, rRot2, rPos2);
+            // 去掉根节点的缩放（已烘焙入绑定位姿）
+            Vector3 c0 = Vector3Normalize({rootM.m0, rootM.m1, rootM.m2});
+            Vector3 c1 = Vector3Normalize({rootM.m4, rootM.m5, rootM.m6});
+            Vector3 c2 = Vector3Normalize({rootM.m8, rootM.m9, rootM.m10});
+            rootM = MatrixIdentity();
+            rootM.m0 = c0.x; rootM.m1 = c0.y; rootM.m2 = c0.z;
+            rootM.m4 = c1.x; rootM.m5 = c1.y; rootM.m6 = c1.z;
+            rootM.m8 = c2.x; rootM.m9 = c2.y; rootM.m10 = c2.z;
+            rootM.m12 = rPos2.x; rootM.m13 = rPos2.y; rootM.m14 = rPos2.z;
+
+            for (int bi = 0; bi < (int)boneInfos.size(); bi++) {
+                if (boneInfos[bi].parent >= 0) continue;
+                for (int f = 0; f < maxFrames; f++) {
+                    Transform *t = &rlAnim->keyframePoses[f][bi];
+                    Matrix animM = MatrixMultiply(
+                        MatrixScale(t->scale.x, t->scale.y, t->scale.z),
+                        QuaternionToMatrix(t->rotation));
+                    animM = MatrixMultiply(animM, MatrixTranslate(t->translation.x, t->translation.y, t->translation.z));
+                    animM = MatrixMultiply(rootM, animM);
+                    t->translation = {animM.m12, animM.m13, animM.m14};
+                    t->rotation = QuaternionFromMatrix(animM);
+                    t->scale = {1,1,1}; // scale handled by rootM
+                }
+            }
+        }
+
         // 将每帧从局部空间转换为模型空间（拓扑有序，父索引 < 子索引）
         for (int f = 0; f < maxFrames; f++)
             ConvertPoseToModelSpace(boneInfos.data(), (int)boneInfos.size(), rlAnim->keyframePoses[f]);
@@ -460,4 +519,19 @@ ModelAnimation *LoadModelAnimationsAssimp(const char *fileName, int *animCount)
 
     //TraceLog(LOG_INFO, "ASSIMP: Loaded %d animations (%d bones)", *animCount, (int)boneMap.size());
     return anims;
+}
+
+// ---------------------------------------------------------------------------
+// 修复动画关键帧：将没有位置数据的骨骼设为绑定位姿位置
+// ---------------------------------------------------------------------------
+void FixAnimationPose(const Model &model, ModelAnimation &anim)
+{
+    if (model.skeleton.boneCount == 0 || anim.boneCount == 0) return;
+    int boneCount = (model.skeleton.boneCount < anim.boneCount) ? model.skeleton.boneCount : anim.boneCount;
+    for (int f = 0; f < anim.keyframeCount; f++) {
+        for (int i = 0; i < boneCount; i++) {
+            anim.keyframePoses[f][i].translation = model.skeleton.bindPose[i].translation;
+            anim.keyframePoses[f][i].scale = model.skeleton.bindPose[i].scale;
+        }
+    }
 }
