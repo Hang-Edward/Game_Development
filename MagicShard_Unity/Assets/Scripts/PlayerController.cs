@@ -12,6 +12,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gravity = -25f;
     [SerializeField] private float groundSnapDistance = 50f;
     [SerializeField] private float groundStickDistance = 0.75f;
+    [SerializeField] private float jumpGroundIgnoreTime = 0.12f;
+    [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private LayerMask groundMask = ~0;
 
     [Header("References")]
@@ -27,6 +29,9 @@ public class PlayerController : MonoBehaviour
     private bool sprint;
     private bool crouching;
     private bool blocking;
+    private bool jumping;
+    private float jumpGroundIgnoreTimer;
+    private float lastGroundedTimer;
 
     private float attackCooldown = 0.35f;
     private float attackTimer;
@@ -48,6 +53,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        RefreshGroundedBeforeInput();
+
         // Read input directly from keyboard/mouse
         Vector2 moveInput = Vector2.zero;
         var kb = Keyboard.current;
@@ -63,8 +70,14 @@ public class PlayerController : MonoBehaviour
         blocking = Mouse.current != null && Mouse.current.rightButton.isPressed;
 
         // Jump
-        if (kb.spaceKey.wasPressedThisFrame && grounded && !crouching)
+        if (kb.spaceKey.wasPressedThisFrame && CanJump())
+        {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            grounded = false;
+            jumping = true;
+            jumpGroundIgnoreTimer = jumpGroundIgnoreTime;
+            lastGroundedTimer = 0f;
+        }
 
         // Attack
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && attackTimer <= 0 && !blocking)
@@ -101,10 +114,15 @@ public class PlayerController : MonoBehaviour
         }
 
         // Gravity
-        grounded = characterController.isGrounded || ProbeGround(out _);
-        if (grounded && velocity.y < 0) velocity.y = -2f;
+        if (jumpGroundIgnoreTimer > 0f)
+            jumpGroundIgnoreTimer -= Time.deltaTime;
+
+        if (!jumping && grounded && velocity.y < 0)
+            velocity.y = -2f;
+
         velocity.y += gravity * Time.deltaTime;
-        characterController.Move(velocity * Time.deltaTime);
+        CollisionFlags verticalCollision = characterController.Move(velocity * Time.deltaTime);
+        ResolveGroundedAfterVerticalMove(verticalCollision);
 
         // Attack cooldown
         if (attackTimer > 0) attackTimer -= Time.deltaTime;
@@ -152,6 +170,7 @@ public class PlayerController : MonoBehaviour
         characterController.enabled = true;
         velocity.y = -2f;
         grounded = true;
+        jumping = false;
     }
 
     private bool ProbeGround(out RaycastHit hit)
@@ -170,7 +189,7 @@ public class PlayerController : MonoBehaviour
 
     private void StickToGround()
     {
-        if (velocity.y > 0f)
+        if (!CanStickToGround())
             return;
 
         if (!ProbeGround(out RaycastHit hit))
@@ -183,5 +202,61 @@ public class PlayerController : MonoBehaviour
         float delta = transform.position.y - hit.point.y;
         if (delta > 0.001f && delta < groundStickDistance)
             characterController.Move(Vector3.down * delta);
+    }
+
+    private bool CanStickToGround()
+    {
+        return !jumping && jumpGroundIgnoreTimer <= 0f && velocity.y <= 0f;
+    }
+
+    private bool CanEvaluateGround()
+    {
+        return jumpGroundIgnoreTimer <= 0f;
+    }
+
+    private bool CanJump()
+    {
+        return !crouching && !jumping && (grounded || lastGroundedTimer > 0f);
+    }
+
+    private void RefreshGroundedBeforeInput()
+    {
+        if (jumping)
+        {
+            grounded = false;
+            return;
+        }
+
+        grounded = CanEvaluateGround() && (characterController.isGrounded || ProbeGround(out _));
+        if (grounded)
+            lastGroundedTimer = coyoteTime;
+        else if (lastGroundedTimer > 0f)
+            lastGroundedTimer -= Time.deltaTime;
+    }
+
+    private void ResolveGroundedAfterVerticalMove(CollisionFlags verticalCollision)
+    {
+        bool touchedGround = (verticalCollision & CollisionFlags.Below) != 0 || characterController.isGrounded;
+
+        if (jumping)
+        {
+            if (velocity.y <= 0f && touchedGround)
+            {
+                jumping = false;
+                grounded = true;
+                velocity.y = -2f;
+                lastGroundedTimer = coyoteTime;
+            }
+            else
+            {
+                grounded = false;
+            }
+
+            return;
+        }
+
+        grounded = touchedGround || (CanEvaluateGround() && ProbeGround(out _));
+        if (grounded)
+            lastGroundedTimer = coyoteTime;
     }
 }
