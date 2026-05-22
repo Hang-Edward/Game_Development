@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -5402,7 +5402,7 @@ MonoBehaviour:
   minDistance: 2
   maxDistance: 12
   mouseSensitivity: 0.2
-  scrollSpeed: 2
+  scrollSpeed: 0.08
   yaw: 0
   pitch: 25
   minPitch: -30
@@ -6888,7 +6888,8 @@ MonoBehaviour:
   jumpHeight: 1.5
   gravity: -25
   groundSnapDistance: 50
-  groundStickDistance: 0.75
+  groundStickDistance: 0.35
+  groundClampOffset: 0.03
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -8795,3 +8796,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 359853059613738085, guid: 0f89ac7c7d29208488f0c8365e86153e, type: 3}
+
+
+

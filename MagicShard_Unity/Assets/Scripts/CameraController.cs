@@ -12,7 +12,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float minDistance = 2f;
     [SerializeField] private float maxDistance = 12f;
     [SerializeField] private float mouseSensitivity = 0.2f;
-    [SerializeField] private float scrollSpeed = 2f;
+    [SerializeField] private float scrollSpeed = 0.08f;
     [SerializeField] private float yaw;
     [SerializeField] private float pitch = 25f;
     [SerializeField] private float minPitch = -30f;
@@ -46,7 +46,9 @@ public class CameraController : MonoBehaviour
             Vector2 delta = Mouse.current.delta.ReadValue();
             yaw += delta.x * mouseSensitivity;
             pitch -= delta.y * mouseSensitivity;
-            distance -= Mouse.current.scroll.ReadValue().y * scrollSpeed * 0.1f;
+            float scrollDelta = Mouse.current.scroll.ReadValue().y;
+            if (Mathf.Abs(scrollDelta) > 0.01f)
+                distance -= scrollDelta * scrollSpeed;
         }
 
         // ESC to toggle cursor

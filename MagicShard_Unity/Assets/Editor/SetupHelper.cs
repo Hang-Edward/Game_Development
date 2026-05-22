@@ -15,7 +15,7 @@ public class SetupHelper : EditorWindow
     [MenuItem("Tools/MagicShard/Setup Project &%s")]
     public static void SetupProject()
     {
-        SetupAnimatorController();
+        CharacterAnimationRepairer.RepairCharacterAnimator();
         SetupInputSettings();
         SetupProjectSettings();
         Debug.Log("Setup complete! Now run: Tools > MagicShard > Build Scene");
@@ -292,6 +292,10 @@ public class SetupHelper : EditorWindow
     [MenuItem("Tools/MagicShard/Create Animator Controller")]
     public static void SetupAnimatorController()
     {
+        CharacterAnimationRepairer.RepairCharacterAnimator();
+        return;
+
+#pragma warning disable CS0162
         string path = "Assets/Animations/Controllers/CharacterAnimator.controller";
         bool exists = File.Exists(Application.dataPath + "/../" + path);
         Directory.CreateDirectory("Assets/Animations/Controllers");
@@ -349,6 +353,7 @@ public class SetupHelper : EditorWindow
         }
         AssetDatabase.SaveAssets();
         Debug.Log("Animator updated: " + idleClip?.name + "/" + walkClip?.name + "/" + runClip?.name);
+#pragma warning restore CS0162
     }
 
     static AnimationClip FindClip(AnimationClip[] clips, params string[] names)

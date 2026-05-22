@@ -21,6 +21,38 @@ public class CharacterMaterialPostprocessor : AssetPostprocessor
         new MaterialAlias("Image_73", "Image_73")
     };
 
+    private void OnPreprocessModel()
+    {
+        if (!assetPath.StartsWith(CharacterModelPath) || !assetPath.EndsWith(".fbx"))
+            return;
+
+        var importer = assetImporter as ModelImporter;
+        if (importer == null)
+            return;
+
+        importer.animationType = ModelImporterAnimationType.Human;
+        importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+        importer.importAnimation = true;
+        importer.materialLocation = ModelImporterMaterialLocation.External;
+
+        var clips = importer.clipAnimations;
+        if (clips == null || clips.Length == 0)
+            clips = importer.defaultClipAnimations;
+
+        foreach (var clip in clips)
+        {
+            clip.lockRootRotation = true;
+            clip.keepOriginalOrientation = true;
+            clip.lockRootHeightY = true;
+            clip.keepOriginalPositionY = true;
+            clip.heightFromFeet = true;
+            clip.lockRootPositionXZ = true;
+            clip.keepOriginalPositionXZ = true;
+        }
+
+        importer.clipAnimations = clips;
+    }
+
     private Material OnAssignMaterialModel(Material material, Renderer renderer)
     {
         if (!assetPath.StartsWith(CharacterModelPath))

@@ -10,10 +10,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float blockSpeed = 2f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -25f;
-    [SerializeField] private float groundSnapDistance = 50f;
-    [SerializeField] private float groundStickDistance = 0.75f;
+    [SerializeField] private float groundSnapDistance = 200f;
+    [SerializeField] private float groundStickDistance = 0.35f;
     [SerializeField] private float jumpGroundIgnoreTime = 0.12f;
     [SerializeField] private float coyoteTime = 0.12f;
+    [SerializeField] private float groundClampOffset = 0.03f;
+    [SerializeField] private float visualGroundOffset = 0.02f;
     [SerializeField] private LayerMask groundMask = ~0;
 
     [Header("References")]
@@ -21,6 +23,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Camera playerCamera;
 
     private CharacterController characterController;
+    private Transform animatedModelRoot;
+    private Vector3 animatedModelLocalPosition;
+    private Quaternion animatedModelLocalRotation;
+    private SkinnedMeshRenderer[] animatedRenderers;
 
     private Vector3 moveDirection;
     private Vector3 velocity;
@@ -29,6 +35,7 @@ public class PlayerController : MonoBehaviour
     private bool sprint;
     private bool crouching;
     private bool blocking;
+    private bool hasMoveInput;
     private bool jumping;
     private float jumpGroundIgnoreTimer;
     private float lastGroundedTimer;
@@ -41,6 +48,19 @@ public class PlayerController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (playerCamera == null) playerCamera = Camera.main;
+        if (animator != null) animator.applyRootMotion = false;
+        if (animator != null && animator.transform != transform)
+        {
+            animatedModelRoot = animator.transform;
+            animatedModelLocalPosition = animatedModelRoot.localPosition;
+            animatedModelLocalRotation = animatedModelRoot.localRotation;
+            animatedRenderers = animatedModelRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            foreach (var renderer in animatedRenderers)
+            {
+                renderer.updateWhenOffscreen = true;
+                renderer.localBounds = new Bounds(Vector3.up, Vector3.one * 6f);
+            }
+        }
 
         ConfigureCharacterController();
     }
@@ -100,11 +120,11 @@ public class PlayerController : MonoBehaviour
 
         Vector3 desiredMove = forward * moveInput.y + right * moveInput.x;
         if (desiredMove.magnitude > 1f) desiredMove.Normalize();
+        hasMoveInput = desiredMove.sqrMagnitude > 0.01f;
         moveDirection = desiredMove * currentSpeed;
 
         // Apply horizontal movement
         characterController.Move(moveDirection * Time.deltaTime);
-        StickToGround();
 
         // Rotate character to face movement direction
         if (desiredMove.magnitude > 0.1f)
@@ -123,6 +143,7 @@ public class PlayerController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         CollisionFlags verticalCollision = characterController.Move(velocity * Time.deltaTime);
         ResolveGroundedAfterVerticalMove(verticalCollision);
+        ClampAboveGround();
 
         // Attack cooldown
         if (attackTimer > 0) attackTimer -= Time.deltaTime;
@@ -130,13 +151,13 @@ public class PlayerController : MonoBehaviour
         // Animator
         if (animator != null)
         {
-            float speed = new Vector3(characterController.velocity.x, 0, characterController.velocity.z).magnitude;
-            animator.SetFloat("Speed", speed);
+            float locomotionBlend = GetLocomotionBlend();
+            animator.SetFloat("Speed", locomotionBlend, 0.08f, Time.deltaTime);
             animator.SetBool("Sprint", sprint && grounded);
             animator.SetBool("Crouch", crouching);
             animator.SetBool("Block", blocking);
             animator.SetBool("Grounded", grounded);
-            animator.SetFloat("MotionSpeed", speed / sprintSpeed);
+            animator.SetFloat("MotionSpeed", locomotionBlend);
         }
     }
 
@@ -151,6 +172,55 @@ public class PlayerController : MonoBehaviour
         characterController.slopeLimit = 55f;
         characterController.stepOffset = Mathf.Clamp(0.35f, 0.01f, characterController.height - 0.01f);
         characterController.skinWidth = Mathf.Max(characterController.skinWidth, 0.08f);
+        groundSnapDistance = Mathf.Max(groundSnapDistance, 200f);
+    }
+
+    private void LateUpdate()
+    {
+        if (animatedModelRoot == null)
+            return;
+
+        animatedModelRoot.localPosition = animatedModelLocalPosition;
+        animatedModelRoot.localRotation = animatedModelLocalRotation;
+        KeepVisibleModelAboveControllerFeet();
+    }
+
+    private void KeepVisibleModelAboveControllerFeet()
+    {
+        if (animatedRenderers == null || animatedRenderers.Length == 0)
+            return;
+
+        bool hasBounds = false;
+        Bounds combinedBounds = default;
+        foreach (var renderer in animatedRenderers)
+        {
+            if (renderer == null || !renderer.enabled)
+                continue;
+
+            if (!hasBounds)
+            {
+                combinedBounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                combinedBounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        if (!hasBounds)
+            return;
+
+        float targetY = transform.position.y + visualGroundOffset;
+        if (TryGetHighestGroundBelow(out RaycastHit hit))
+            targetY = Mathf.Max(targetY, hit.point.y + visualGroundOffset);
+
+        if (combinedBounds.min.y >= targetY)
+            return;
+
+        Vector3 localPosition = animatedModelRoot.localPosition;
+        localPosition.y += targetY - combinedBounds.min.y;
+        animatedModelRoot.localPosition = localPosition;
     }
 
     private void SnapToGround()
@@ -158,11 +228,7 @@ public class PlayerController : MonoBehaviour
         if (characterController == null)
             return;
 
-        characterController.enabled = false;
-        bool foundGround = Physics.Raycast(transform.position + Vector3.up * 5f, Vector3.down, out RaycastHit hit, groundSnapDistance, groundMask, QueryTriggerInteraction.Ignore);
-        characterController.enabled = true;
-
-        if (!foundGround)
+        if (!TryGetHighestGroundBelow(out RaycastHit hit))
             return;
 
         characterController.enabled = false;
@@ -175,38 +241,122 @@ public class PlayerController : MonoBehaviour
 
     private bool ProbeGround(out RaycastHit hit)
     {
+        hit = default;
         float radius = characterController != null ? characterController.radius * 0.9f : 0.3f;
         Vector3 origin = transform.position + Vector3.up * 0.15f;
+        RaycastHit[] hits;
+
         if (characterController == null)
-            return Physics.SphereCast(origin, radius, Vector3.down, out hit, groundStickDistance, groundMask, QueryTriggerInteraction.Ignore);
+        {
+            hits = Physics.SphereCastAll(origin, radius, Vector3.down, groundStickDistance, groundMask, QueryTriggerInteraction.Ignore);
+        }
+        else
+        {
+            bool wasEnabled = characterController.enabled;
+            characterController.enabled = false;
+            hits = Physics.SphereCastAll(origin, radius, Vector3.down, groundStickDistance, groundMask, QueryTriggerInteraction.Ignore);
+            characterController.enabled = wasEnabled;
+        }
 
-        bool wasEnabled = characterController.enabled;
+        return TryPickHighestWalkableHit(hits, out hit);
+    }
+
+    private void ClampAboveGround()
+    {
+        if (!TryGetHighestGroundBelow(out RaycastHit hit))
+            return;
+
+        float minFeetY = hit.point.y + groundClampOffset;
+        if (transform.position.y >= minFeetY)
+            return;
+
         characterController.enabled = false;
-        bool foundGround = Physics.SphereCast(origin, radius, Vector3.down, out hit, groundStickDistance, groundMask, QueryTriggerInteraction.Ignore);
-        characterController.enabled = wasEnabled;
-        return foundGround;
+        transform.position = new Vector3(transform.position.x, minFeetY, transform.position.z);
+        characterController.enabled = true;
+
+        if (velocity.y < 0f)
+            velocity.y = -2f;
+
+        grounded = true;
+        jumping = false;
+        lastGroundedTimer = coyoteTime;
     }
 
-    private void StickToGround()
+    private bool TryGetHighestGroundBelow(out RaycastHit bestHit)
     {
-        if (!CanStickToGround())
-            return;
+        bestHit = default;
+        Vector3 origin = transform.position + Vector3.up * groundSnapDistance;
+        RaycastHit[] hits;
 
-        if (!ProbeGround(out RaycastHit hit))
-            return;
+        if (characterController == null)
+        {
+            hits = Physics.RaycastAll(origin, Vector3.down, groundSnapDistance * 2f, groundMask, QueryTriggerInteraction.Ignore);
+        }
+        else
+        {
+            bool wasEnabled = characterController.enabled;
+            characterController.enabled = false;
+            hits = Physics.RaycastAll(origin, Vector3.down, groundSnapDistance * 2f, groundMask, QueryTriggerInteraction.Ignore);
+            characterController.enabled = wasEnabled;
+        }
 
-        float slope = Vector3.Angle(hit.normal, Vector3.up);
-        if (slope > characterController.slopeLimit)
-            return;
-
-        float delta = transform.position.y - hit.point.y;
-        if (delta > 0.001f && delta < groundStickDistance)
-            characterController.Move(Vector3.down * delta);
+        return TryPickHighestGroundHit(hits, out bestHit);
     }
 
-    private bool CanStickToGround()
+    private bool TryPickHighestGroundHit(RaycastHit[] hits, out RaycastHit bestHit)
     {
-        return !jumping && jumpGroundIgnoreTimer <= 0f && velocity.y <= 0f;
+        bestHit = default;
+        bool found = false;
+        float highestY = float.NegativeInfinity;
+
+        foreach (var candidate in hits)
+        {
+            if (candidate.collider == null || candidate.collider.transform.root == transform.root)
+                continue;
+
+            if (candidate.point.y <= highestY)
+                continue;
+
+            highestY = candidate.point.y;
+            bestHit = candidate;
+            found = true;
+        }
+
+        return found;
+    }
+
+    private bool TryPickHighestWalkableHit(RaycastHit[] hits, out RaycastHit bestHit)
+    {
+        bestHit = default;
+        bool found = false;
+        float highestY = float.NegativeInfinity;
+
+        foreach (var candidate in hits)
+        {
+            if (!IsWalkableGround(candidate))
+                continue;
+
+            if (candidate.point.y <= highestY)
+                continue;
+
+            highestY = candidate.point.y;
+            bestHit = candidate;
+            found = true;
+        }
+
+        return found;
+    }
+
+    private bool IsWalkableGround(RaycastHit hit)
+    {
+        if (hit.collider == null || hit.collider.transform.root == transform.root)
+            return false;
+
+        if (hit.normal.y <= 0.01f)
+            return false;
+
+        float slopeLimit = characterController != null ? characterController.slopeLimit : 55f;
+        return Vector3.Angle(hit.normal, Vector3.up) <= slopeLimit;
     }
 
     private bool CanEvaluateGround()
@@ -217,6 +367,17 @@ public class PlayerController : MonoBehaviour
     private bool CanJump()
     {
         return !crouching && !jumping && (grounded || lastGroundedTimer > 0f);
+    }
+
+    private float GetLocomotionBlend()
+    {
+        if (!hasMoveInput)
+            return 0f;
+
+        if (sprint && grounded && !crouching && !blocking)
+            return 1f;
+
+        return 0.55f;
     }
 
     private void RefreshGroundedBeforeInput()

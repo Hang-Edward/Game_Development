@@ -1,44 +1,9 @@
-﻿fileFormatVersion: 2
+fileFormatVersion: 2
 guid: a8a2cb71d3d2dd84b87128b27c0f6297
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
   externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: armor_mat1.003
-    second: {fileID: 2100000, guid: f2922a3704ee4e9bbffae033c391dcf1, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: armor_mat2.003
-    second: {fileID: 2100000, guid: 1c509f3808744733a8bd1e0310a2f5df, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: armor_mat3.003
-    second: {fileID: 2100000, guid: f4f3920fc7de4390a7419d90af72149f, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: armor_mat4.003
-    second: {fileID: 2100000, guid: a39f0c61bc2649589bc2f3c1abfed9e8, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: eye_iris_1.003
-    second: {fileID: 2100000, guid: 63ef5b3566674d71a7b2386756bb9040, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: face_mat_1.003
-    second: {fileID: 2100000, guid: e9db38e9aa914a3b83aa29a73b9b3981, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: hair_mat_1.003
-    second: {fileID: 2100000, guid: cca7d1549c9445859c10cf2f0a67322a, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -147,6 +112,41 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: armor_mat1.003
+    second: {fileID: 2100000, guid: f2922a3704ee4e9bbffae033c391dcf1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: armor_mat2.003
+    second: {fileID: 2100000, guid: 1c509f3808744733a8bd1e0310a2f5df, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: armor_mat3.003
+    second: {fileID: 2100000, guid: f4f3920fc7de4390a7419d90af72149f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: armor_mat4.003
+    second: {fileID: 2100000, guid: a39f0c61bc2649589bc2f3c1abfed9e8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eye_iris_1.003
+    second: {fileID: 2100000, guid: 63ef5b3566674d71a7b2386756bb9040, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: face_mat_1.003
+    second: {fileID: 2100000, guid: e9db38e9aa914a3b83aa29a73b9b3981, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_mat_1.003
+    second: {fileID: 2100000, guid: cca7d1549c9445859c10cf2f0a67322a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lash_mat_001.003
     second: {fileID: 2100000, guid: 12df35f51b934664b5cbb3960c0a07d3, type: 2}
   - first:
@@ -168,7 +168,7 @@ ModelImporter:
     materialImportMode: 1
     materialName: 0
     materialSearch: 1
-    materialLocation: 1
+    materialLocation: 0
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
@@ -288,13 +288,13 @@ ModelImporter:
       hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
       keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 0
-      heightFromFeet: 0
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 1
       mirror: 0
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
@@ -2088,7 +2088,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-
-
-
-
