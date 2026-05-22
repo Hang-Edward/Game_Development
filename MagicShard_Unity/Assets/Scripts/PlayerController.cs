@@ -10,6 +10,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float blockSpeed = 2f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -25f;
+    [SerializeField] private float groundSnapDistance = 50f;
+    [SerializeField] private float groundStickDistance = 0.75f;
+    [SerializeField] private LayerMask groundMask = ~0;
 
     [Header("References")]
     [SerializeField] private Animator animator;
@@ -33,6 +36,14 @@ public class PlayerController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (playerCamera == null) playerCamera = Camera.main;
+
+        ConfigureCharacterController();
+    }
+
+    private void Start()
+    {
+        TerrainCollisionBuilder.EnsureSceneTerrainColliders();
+        SnapToGround();
     }
 
     private void Update()
@@ -80,6 +91,7 @@ public class PlayerController : MonoBehaviour
 
         // Apply horizontal movement
         characterController.Move(moveDirection * Time.deltaTime);
+        StickToGround();
 
         // Rotate character to face movement direction
         if (desiredMove.magnitude > 0.1f)
@@ -89,7 +101,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Gravity
-        grounded = characterController.isGrounded;
+        grounded = characterController.isGrounded || ProbeGround(out _);
         if (grounded && velocity.y < 0) velocity.y = -2f;
         velocity.y += gravity * Time.deltaTime;
         characterController.Move(velocity * Time.deltaTime);
@@ -108,5 +120,68 @@ public class PlayerController : MonoBehaviour
             animator.SetBool("Grounded", grounded);
             animator.SetFloat("MotionSpeed", speed / sprintSpeed);
         }
+    }
+
+    private void ConfigureCharacterController()
+    {
+        if (characterController == null)
+            return;
+
+        characterController.height = Mathf.Max(characterController.height, 1.8f);
+        characterController.radius = Mathf.Max(characterController.radius, 0.35f);
+        characterController.center = new Vector3(0f, characterController.height * 0.5f, 0f);
+        characterController.slopeLimit = 55f;
+        characterController.stepOffset = Mathf.Clamp(0.35f, 0.01f, characterController.height - 0.01f);
+        characterController.skinWidth = Mathf.Max(characterController.skinWidth, 0.08f);
+    }
+
+    private void SnapToGround()
+    {
+        if (characterController == null)
+            return;
+
+        characterController.enabled = false;
+        bool foundGround = Physics.Raycast(transform.position + Vector3.up * 5f, Vector3.down, out RaycastHit hit, groundSnapDistance, groundMask, QueryTriggerInteraction.Ignore);
+        characterController.enabled = true;
+
+        if (!foundGround)
+            return;
+
+        characterController.enabled = false;
+        transform.position = hit.point;
+        characterController.enabled = true;
+        velocity.y = -2f;
+        grounded = true;
+    }
+
+    private bool ProbeGround(out RaycastHit hit)
+    {
+        float radius = characterController != null ? characterController.radius * 0.9f : 0.3f;
+        Vector3 origin = transform.position + Vector3.up * 0.15f;
+        if (characterController == null)
+            return Physics.SphereCast(origin, radius, Vector3.down, out hit, groundStickDistance, groundMask, QueryTriggerInteraction.Ignore);
+
+        bool wasEnabled = characterController.enabled;
+        characterController.enabled = false;
+        bool foundGround = Physics.SphereCast(origin, radius, Vector3.down, out hit, groundStickDistance, groundMask, QueryTriggerInteraction.Ignore);
+        characterController.enabled = wasEnabled;
+        return foundGround;
+    }
+
+    private void StickToGround()
+    {
+        if (velocity.y > 0f)
+            return;
+
+        if (!ProbeGround(out RaycastHit hit))
+            return;
+
+        float slope = Vector3.Angle(hit.normal, Vector3.up);
+        if (slope > characterController.slopeLimit)
+            return;
+
+        float delta = transform.position.y - hit.point.y;
+        if (delta > 0.001f && delta < groundStickDistance)
+            characterController.Move(Vector3.down * delta);
     }
 }

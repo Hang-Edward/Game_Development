@@ -56,7 +56,12 @@ public class SetupHelper : EditorWindow
         var player = new GameObject("Player");
         player.tag = "Player";
         var cc = player.AddComponent<CharacterController>();
-        cc.height = 1.8f; cc.radius = 0.4f; cc.stepOffset = 0.3f; cc.skinWidth = 0.08f;
+        cc.height = 1.8f;
+        cc.radius = 0.4f;
+        cc.center = new Vector3(0f, cc.height * 0.5f, 0f);
+        cc.slopeLimit = 55f;
+        cc.stepOffset = 0.35f;
+        cc.skinWidth = 0.08f;
 
         var pi = player.AddComponent<PlayerInput>();
         pi.actions = inputActions;
@@ -131,18 +136,12 @@ public class SetupHelper : EditorWindow
             var terrain = (GameObject)PrefabUtility.InstantiatePrefab(terrainModel);
             terrain.name = "Terrain";
             terrain.transform.position = Vector3.zero;
+            if (terrain.GetComponent<TerrainCollisionBuilder>() == null)
+                terrain.AddComponent<TerrainCollisionBuilder>();
 
-            // Add platform collider as ground backup (ensures player always has something to stand on)
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "GroundPlane";
-            ground.transform.SetParent(terrain.transform);
-            ground.transform.position = new Vector3(0, 0, 0);
-            ground.transform.localScale = new Vector3(200, 1, 200);
-            var mr = ground.GetComponent<MeshRenderer>();
-            if (mr != null) mr.enabled = false; // hide the plane
-
+            // TerrainCollisionBuilder handles all MeshCollider setup via OnEnable
             Undo.RegisterCreatedObjectUndo(terrain, "Create Terrain");
-            Debug.Log("Terrain placed with ground plane");
+            Debug.Log("Terrain placed");
         }
         else
             Debug.LogWarning("map_01_forest.fbx not found.");
