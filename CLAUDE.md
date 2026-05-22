@@ -2,96 +2,101 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Build & Run
+## 项目状态：迁移到 Unity
+
+项目已从 raylib + Assimp (C++17) 迁移到 **Unity 2022.3 LTS** (C#)。
+
+- 旧版 C++ 代码保留在 `src/` 目录作为参考
+- Unity 项目位于 `MagicShard_Unity/`
+- GLB 模型文件仍位于 `assets/models/`（通过软链接或复制到 Unity 项目）
+
+## 构建与运行
 
 ```bash
-# Configure (first time or when CMakeLists.txt changes)
-cd build && cmake .. -G "MinGW Makefiles"
-
-# Build all targets in parallel
-cmake --build . -j4
-
-# Game executables (run from build/ directory)
-./map1.exe         # Chapter 1: 银风森林
-./map2.exe         # Chapter 2
-./char_test.exe    # Standalone character viewer (no map)
-./glb_check.exe    # GLB file diagnostic tool
+# 使用 Unity Hub 打开 Unity 项目
+# 1. 启动 Unity Hub
+# 2. 添加项目 -> MagicShard_Unity/
+# 3. 在 Unity Editor 中打开场景 Assets/Scenes/GameWorld.unity
+# 4. 点击 Play 按钮运行
 ```
 
-## Architecture
+## Unity 项目结构
 
-### Code Structure
+| 目录/文件 | 用途 |
+|-----------|------|
+| `Assets/Scripts/PlayerController.cs` | 玩家移动、物理、输入处理 |
+| `Assets/Scripts/CameraController.cs` | 第三人称轨道相机 |
+| `Assets/Scripts/CombatSystem.cs` | 攻击检测与冷却 |
+| `Assets/Scripts/UIManager.cs` | HUD 和 UI 管理 |
+| `Assets/Scripts/GameManager.cs` | 游戏初始化与状态管理 |
+| `Assets/Scripts/AnimationStateController.cs` | 动画参数辅助 |
+| `Assets/Settings/GameInput.inputactions` | 输入系统绑定定义 |
+| `Assets/Animations/Controllers/` | Animator Controller 存放位置 |
+| `Assets/Animations/SETUP_GUIDE.md` | Unity Editor 手动设置步骤 |
+| `Assets/Models/` | GLB 模型文件 |
+| `Assets/Scenes/` | Unity 场景文件 |
+| `Assets/Prefabs/` | 预制体 |
 
-| File | Purpose |
-|------|---------|
-| `src/main.cpp` | Game loop, input, physics, camera, rendering (~290 lines) |
-| `src/assimp_loader.cpp` | Custom GLB model/animation loader via Assimp SDK (~520 lines) |
-| `src/assimp_loader.h` | Public API for loader + FixAnimationPose |
-| `src/char_test.cpp` | Standalone character test (no map) |
-| `src/glb_check.cpp` | GLB diagnostic tool (prints scene graph, bone data, animation channels) |
-| `CMakeLists.txt` | Dual-target build (map1/map2) + test tools |
+## 输入绑定
 
-### Build System
+| 操作 | 键位 | 对应旧代码 |
+|------|------|-----------|
+| Move | WASD | IsKeyDown(KEY_W/S/A/D) |
+| Look | 鼠标移动 | GetMouseDelta() |
+| Sprint | Shift | IsKeyDown(KEY_LEFT_SHIFT) |
+| Crouch | Ctrl | IsKeyDown(KEY_LEFT_CONTROL) |
+| Jump | Space | IsKeyPressed(KEY_SPACE) |
+| Attack | 鼠标左键 | IsMouseButtonPressed(MOUSE_BUTTON_LEFT) |
+| Block | 鼠标右键 | IsMouseButtonDown(MOUSE_BUTTON_RIGHT) |
+| Zoom | 滚轮 | GetMouseWheelMove() |
+| ToggleCursor | Escape | IsKeyPressed(KEY_ESCAPE) |
 
-- CMake 3.14+, C++17, MinGW-w64 8.1.0
-- Dependencies auto-fetched via FetchContent: raylib 6.0 (GitHub) + Assimp 5.4.3 (Gitee mirror)
-- Two game executables from same source, differentiated by `MAP_FILE` compile definition
+## 旧版代码参考
 
-## Assimp Loader Key Design Decisions
+旧版 raylib 代码保留在 `src/` 目录，仅供逻辑参考，不再编译：
 
-### Bone Collection
+| 文件 | 功能 | Unity 替代 |
+|------|------|-----------|
+| `src/main.cpp` | 游戏循环、输入、物理、相机、渲染 | Unity MonoBehaviour 系统 |
+| `src/assimp_loader.cpp` | 自定义 GLB 加载/动画 (922行) | Unity 原生 GLB 导入管线 |
+| `src/assimp_loader.h` | 公共 API | Unity 自动处理 |
+| `src/char_test.cpp` | 角色查看器 | Unity 场景实时预览 |
+| `src/glb_check.cpp` | GLB 诊断工具 | Unity Inspector 调试 |
 
-Bones are collected from ALL meshes, sorted by bone count descending (mesh with most bones first). This ensures the authoritative mesh's `mOffsetMatrix` is used for bones shared across multiple meshes. The `collectMeshes[]` hardcoded array approach was replaced by runtime sorting.
-
-### Bind Pose
-
-- Extracted from `mOffsetMatrix.Inverse()` → model-space bind transform
-- **Scale normalization**: common scale factor (e.g., 0.0165) is divided out from all bindPoses to prevent `inverse(bindPose) * currentPose` from producing extreme scales (60x+)
-- Stored in `model.skeleton.bindPose[]`
-
-### Animation Keyframes
-
-- Loaded from Assimp animation channels, stored as LOCAL transforms
-- **Root node fix**: root bone (parent=-1) keyframes are multiplied by root node transform before `ConvertPoseToModelSpace()`
-- **ConvertPoseToModelSpace()**: walks parent chain to convert local → model-space (multi-pass for non-topological order)
-- **FixAnimationPose()**: copies bindPose translation+scale to keyframePoses (GLB files often have rotation-only animation with zero position keys)
-
-### Skeleton Animation Pipeline
+## 关键设计：Unity 角色动画管线
 
 ```
-UpdateModelAnimation(model, anim, frame):
-  currentPose = lerp(keyframePoses[frame], keyframePoses[frame+1])
-  boneMatrices[i] = MatrixInvert(bindPose[i]) * currentPose[i]
-  → CPU skinning: animVertices = boneMatrices * originalVertices
-  → Updates VBOs for rendering
-
-// After UpdateModelAnimation:
-activeModel->boneMatrices = NULL  // Prevents GPU skinning double-transform
+角色 GLB 文件 (stand/walk/run)
+  → Unity 导入管线 (Humanoid Rig)
+    → Avatar 骨骼映射（自动）
+      → Animator Controller 管理动画状态
+        → Blend Tree: Speed 参数控制 idle/walk/run 混合
+          → GPU 蒙皮（Unity 自动处理）
 ```
 
-### GLB Animation Data (character files)
+**相比旧代码的核心改进：**
+- Unity 的 Humanoid Avatar 自动解决骨骼名称和层级映射问题
+- Animator Blend Tree 实现平滑过渡（无需手动 lerp）
+- GPU 蒙皮替代 CPU 蒙皮（无需手动更新 VBO）
+- PhysX 物理引擎替代手动物理（重力、碰撞、刚体）
 
-All three character GLB files (stand/walk/run) have:
-- **No position animation**: all position keys are `(0,0,0)` for every channel
-- **Rotation-only**: 48/26/18 rotation keys per file, varying by bone
-- **Scale keys**: single key at `(1,1,1)` for all channels
-- This means FixAnimationPose is required to give bones their bind-pose positions
+## 资产
 
-## Debug Tools
+GLB 模型文件位于 `assets/models/`，需要复制到 `MagicShard_Unity/Assets/Models/`：
+- `assets/models/map_01_forest.glb` (304MB, Git LFS)
+- `assets/models/character/stand.glb`, `walk.glb`, `run.glb`
+- `assets/models/boss_spider/` (idle, walk, attack)
+- `assets/models/boss3/` (static, move, attack1-3, defense, die, stepback)
 
-```bash
-./glb_check.exe    # Checks scene graph, bone sharing, animation channels
-./char_test.exe    # 3D viewer with 1/2/3 keys to switch animations
-```
+## 已知的 GLB 导出问题
 
-## Known Issues (2026-05-18)
+旧版 C++ 代码中诊断出的 GLB 问题在 Unity 中可能部分减轻（Humanoid Rig 自动处理），但仍建议重新导出：
+- Position keys 全部为 (0,0,0) — Unity Humanoid 会通过 IK 推断位置
+- 根节点缩放 0.01 — Unity Import 的 Scale Factor 可校正
+- 骨骼跨网格重复 — Unity 自动合并
 
-- `b_root_0_060` bone has extreme bind pose translation `(-5.96, -64.38, -22.47)` in mesh 0 (weapon chain). Being at the leaf of the scene graph, it doesn't affect character bones.
-- Character GLB files from FBX export have all position keys at `(0,0,0)` — rotation-only animation. `FixAnimationPose` compensates.
-- The root node has scale `0.01` (FBX→GLB unit conversion). This is normalized out and baked into bindPose during model loading.
+## 版本规则
 
-## Versioning
-
-- Only increment minor version (v0.x) for functional changes.
-- Never change major version unless explicitly told.
-- Log changes in `log.md`.
+- 仅递增次版本号 (v0.x) 用于功能性变更。
+- 未经明确要求，不得更改主版本号。
+- 变更记录在 `log.md`。

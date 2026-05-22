@@ -1,17 +1,17 @@
 # 魔法碎片：暗蚀纪元
 
-基于 raylib 6.0 + C++17 的 3D 开放世界冒险游戏。
+Unity 2022.3 LTS 3D 开放世界冒险游戏（C#）。
+
+> 从 raylib + C++17 迁移而来，旧版代码保留在 `src/` 目录作为参考。
 
 ## 环境要求
 
 | 工具 | 版本要求 |
 |------|---------|
-| CMake | ≥ 3.14 |
-| C++ 编译器 | 支持 C++17（GCC 8+, MSVC 2019+） |
+| Unity | 2022.3 LTS+ |
 | Git | 任意版本 |
-| 显卡 | 支持 OpenGL 3.3+ |
 
-## 构建步骤
+## 构建与运行
 
 ### 1. 克隆仓库
 
@@ -20,34 +20,36 @@ git clone https://github.com/你的用户名/项目名.git
 cd 项目目录
 ```
 
-### 2. 配置并编译
+### 2. 打开 Unity 项目
+
+1. 启动 Unity Hub
+2. 点击 "添加" → 选择 `MagicShard_Unity/` 目录
+3. Unity 会自动下载依赖 Package（Cinemachine、Input System、TextMeshPro 等）
+4. 在 Project 窗口中打开 `Assets/Scenes/GameWorld.unity`
+5. 点击 Play 按钮运行
+
+### 3. 复制模型资产
+
+首次运行前，需要将 GLB 模型文件复制到 Unity 项目：
 
 ```bash
-mkdir build && cd build
-cmake .. -G "MinGW Makefiles"
-cmake --build . -j4
+# 复制角色模型
+cp assets/models/character/*.glb MagicShard_Unity/Assets/Models/Character/
+# 复制地图模型
+cp assets/models/map_*.glb MagicShard_Unity/Assets/Models/Map/
+# 复制 BOSS 模型
+cp assets/models/boss_spider/*.glb MagicShard_Unity/Assets/Models/Boss_Spider/
+cp assets/models/boss3/*.glb MagicShard_Unity/Assets/Models/Boss3/
 ```
 
-> CMake 会自动从 GitHub/Gitee 下载并编译 raylib 6.0 和 Assimp 5.4.3。
-
-### 3. 运行
-
-```bash
-# 第一章 银风森林
-./map1.exe
-
-# 第二章
-./map2.exe
-```
-
-> 注意：必须从 `build/` 目录运行，因为资源文件路径是相对于 `build/` 的 `../assets/`。
+详见 `MagicShard_Unity/Assets/Animations/SETUP_GUIDE.md`。
 
 ## 操作说明
 
 | 操作 | 按键 |
 |------|------|
 | 移动 | WASD |
-| 视角 | 鼠标滑动（点击画面后自动锁定） |
+| 视角 | 鼠标滑动 |
 | 缩放 | 滚轮 |
 | 跳跃 | Space |
 | 冲刺 | Shift |
@@ -56,31 +58,38 @@ cmake --build . -j4
 | 格挡 | 右键 |
 | 释放鼠标 | ESC |
 
-## 项目结构
+## Unity 项目结构
 
 ```
-├── CMakeLists.txt              # 构建配置
-├── src/
-│   ├── main.cpp                # 游戏主程序
-│   ├── assimp_loader.h         # Assimp 模型加载器
-│   └── assimp_loader.cpp
-├── assets/
-│   └── models/
-│       ├── map_01_forest.glb   # 第一章地图
-│       ├── map_02.glb          # 第二章地图
-│       ├── character/          # 主角模型及动画
-│       │   ├── stand.glb
-│       │   ├── walk.glb
-│       │   └── run.glb
-│       ├── boss_spider/        # BOSS1
-│       └── boss3/              # BOSS3（未命名）
-├── build/                      # 编译输出（已 gitignore）
-├── log.md                      # 开发日志
-└── .gitignore
+MagicShard_Unity/
+├── Assets/
+│   ├── Scripts/           # C# 游戏脚本
+│   │   ├── PlayerController.cs
+│   │   ├── CameraController.cs
+│   │   ├── CombatSystem.cs
+│   │   ├── UIManager.cs
+│   │   ├── GameManager.cs
+│   │   └── AnimationStateController.cs
+│   ├── Settings/
+│   │   └── GameInput.inputactions   # 输入绑定配置
+│   ├── Animations/
+│   │   ├── Controllers/             # Animator Controller
+│   │   └── SETUP_GUIDE.md           # Unity 设置指南
+│   ├── Models/          # GLB 模型文件
+│   ├── Scenes/          # Unity 场景
+│   ├── Prefabs/         # 预制体
+│   └── UI/              # UI 资源
+├── Packages/
+│   └── manifest.json    # 包依赖
+└── ProjectSettings/     # Unity 项目设置
 ```
 
-## 注意事项
+## 旧版 (raylib C++)
 
-- 第一章地图文件较大（~300MB），首次加载需等待数秒
-- 如需添加新地图，在 `CMakeLists.txt` 中新增 `add_executable` 并指定 `MAP_FILE` 宏即可
-- Python 脚本（`head_pose_recognition.py`）用于头部姿态识别，尚未接入游戏本体
+旧版 raylib 代码保留在 `src/` 和 `CMakeLists.txt`，如需编译：
+
+```bash
+cd build && cmake .. -G "MinGW Makefiles" && cmake --build . -j4
+./map1.exe   # 第一章
+./map2.exe   # 第二章
+```

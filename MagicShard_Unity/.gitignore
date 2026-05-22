@@ -1,0 +1,32 @@
+# Unity generated
+Library/
+Temp/
+obj/
+*.csproj
+*.sln
+*.userprefs
+
+# Unity cache
+*.log
+*.tmp
+sysinfo.txt
+
+# Build artifacts
+Build/
+Builds/
+
+# IDE
+.idea/
+*.suo
+*.user
+.vs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Asset imports (generated)
+Assets/AssetStoreTools*
+
+# GLB backup files
+*_backup.glb

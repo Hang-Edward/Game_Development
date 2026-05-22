@@ -1,8 +1,39 @@
+# GLB 模型文件（Git LFS）
 *.glb filter=lfs diff=lfs merge=lfs -text
 
-# 告诉 GitHub 不要把 build/ 下的文件计入语言统计
-build/* linguist-vendored
+# FBX 模型文件（Git LFS）
+*.fbx filter=lfs diff=lfs merge=lfs -text
 
-# 明确指定 src/ 下的 .cpp 和 .h 文件是项目的主要语言
+# Unity 场景和预制体（文本格式可合并）
+*.unity text=auto
+*.prefab text=auto
+
+# Unity Animator Controller
+*.controller text=auto
+
+# Unity 脚本
+*.cs text=auto diff=csharp
+
+# 着色器
+*.shader text=auto
+*.hlsl text=auto
+*.cginc text=auto
+
+# 文本资源
+*.json text=auto
+*.xml text=auto
+*.txt text=auto
+*.md text=auto
+*.asset text=auto
+*.meta text=auto
+
+# 图片资源（不进行 diff）
+*.png -text diff=image
+
+# 旧版 C++ 源码
 src/*.cpp linguist-language=C++
 src/*.h linguist-language=C++
+
+# 不将 build/ 和 Unity Library 计入语言统计
+build/* linguist-vendored
+MagicShard_Unity/Library/* linguist-vendored

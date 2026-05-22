@@ -179,3 +179,73 @@ cd build
 - 除非开发者明确要求 `v1.0` / `v2.0` 等大版本号，否则**绝不更改大版本号**
 - 每次功能性改动（新增/修改/删除功能）都必须递增小版本号并记录
 - 纯文档修改不需要更新版本号，但仍需在日志中记录
+
+### v0.2 - 修复角色局部骨骼扭曲
+
+#### 改动文件
+- `src/assimp_loader.cpp` - 将 `*_scaleCompensation` 辅助骨骼折叠到对应真实骨骼，避免手指、腿部、脚部被辅助骨骼和真实骨骼重复拉扯。
+- `src/assimp_loader.cpp` - 顶点骨骼权重改为按真实骨骼合并、按权重排序、保留前 4 个影响并归一化。
+- `src/char_test.cpp` - 更新过期调试文字。
+
+#### 新增功能/修复
+- 修复右手手指、腿、脚等部位在动画播放时出现局部扭曲的问题。
+- 角色有效骨骼数从 103 降为 96，移除了参与蒙皮的 ScaleCompensation 辅助节点。
+
+#### 注意事项
+- ScaleCompensation 节点仍可存在于 GLB 场景图和动画 channel 中，但不会作为独立蒙皮骨骼使用。
+
+### v0.3 - 临时锁定下肢错误旋转
+
+#### 改动文件
+- src/assimp_loader.cpp - 在 FixAnimationPose() 中对 thigh/calf/foot/toe 下肢骨骼使用 bindPose 旋转，避免错误动画旋转导致腿部扭曲。
+- src/char_test.cpp - 添加 B 键切换 bind pose/动画姿态，方便之后继续排查动画旋转空间。
+
+#### 新增功能/修复
+- 修复 char_test 中腿部、小腿、脚部继续扭曲的问题。
+
+#### 注意事项
+- 这是保守视觉修复：下肢动画暂时锁定到绑定姿态，后续恢复 walk/run 腿部动作时需要继续处理 FBX 导出旋转空间。
+
+---
+
+### v0.4 — 底层重构：迁移至 Unity 引擎
+
+#### 背景
+角色动画 GLB 文件存在根本性缺陷（所有 position keys 为 (0,0,0)），FixAnimationPose 暴力覆盖方案无法彻底解决骨骼扭曲/重叠问题。C++ raylib + Assimp 的手动 CPU 蒙皮管线调试成本过高，决定迁移到 Unity 引擎利用其成熟的动画系统。
+
+#### 改动文件
+- `MagicShard_Unity/` — 全新 Unity 2022.3 LTS 项目
+- `MagicShard_Unity/Assets/Scripts/PlayerController.cs` — 玩家移动、物理、输入处理
+- `MagicShard_Unity/Assets/Scripts/CameraController.cs` — 第三人称轨道相机
+- `MagicShard_Unity/Assets/Scripts/CombatSystem.cs` — 攻击检测与冷却
+- `MagicShard_Unity/Assets/Scripts/UIManager.cs` — HUD 和 UI 管理
+- `MagicShard_Unity/Assets/Scripts/GameManager.cs` — 游戏初始化与状态管理
+- `MagicShard_Unity/Assets/Scripts/AnimationStateController.cs` — 动画参数辅助
+- `MagicShard_Unity/Assets/Settings/GameInput.inputactions` — 输入系统绑定定义
+- `MagicShard_Unity/Assets/Animations/SETUP_GUIDE.md` — Unity Editor 手动设置步骤
+- `MagicShard_Unity/Packages/manifest.json` — 包依赖声明
+- `MagicShard_Unity/ProjectSettings/ProjectVersion.txt` — Unity 版本配置
+- `MagicShard_Unity/.gitignore` — Unity 项目忽略规则
+- `CLAUDE.md` — 重写为 Unity 项目指导
+- `README.md` — 更新为 Unity 构建说明
+- `.gitignore` — 添加 Unity 项目条目
+
+#### 新增功能/修复
+- **引擎迁移**：从 raylib 6.0 + C++17 迁移到 Unity 2022.3 LTS + C#
+- **动画系统**：Unity Mecanim Animator + Humanoid Rig 替代手动 CPU 蒙皮
+  - Unity 自动处理骨骼映射、GPU 蒙皮、动画混合
+  - Animator Blend Tree 实现 idle/walk/run 平滑过渡
+- **物理系统**：Unity CharacterController + PhysX 替代手动物理
+  - 自动重力、碰撞检测、地面判定
+- **相机系统**：Unity 相机 + Cinemachine 替代手动 Camera3D 计算
+- **输入系统**：Unity Input System Package 替代 raylib IsKeyDown()
+  - 可自定义按键映射
+- **UI 系统**：TextMeshPro + Canvas 替代 raylib DrawTextEx()
+- **模型导入**：Unity 原生 GLB 导入管线替代 Assimp 自定义加载器
+  - Humanoid Avatar 自动解决骨骼名称和层级映射问题
+
+#### 注意事项
+- GLB 模型文件需要手动复制到 `MagicShard_Unity/Assets/Models/`（通过 Git LFS 跟踪）
+- Unity 项目首次打开需要下载 Package 依赖（自动）
+- 旧版 C++ 源码保留在 `src/` 目录作为参考，不再编译
+- 设置步骤详见 `MagicShard_Unity/Assets/Animations/SETUP_GUIDE.md`

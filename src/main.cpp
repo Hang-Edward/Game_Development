@@ -130,9 +130,9 @@ int main() {
         activeModel = &standModel;
         hasChar = true;
         // clamp frame ranges to actual keyframeCount
-        if (standCount > 0) standEnd = standAnims[0].keyframeCount - 1;
-        if (walkCount > 0)  walkEnd  = walkAnims[0].keyframeCount - 1;
-        if (runCount > 0)   runEnd   = runAnims[0].keyframeCount - 1;
+        if (standCount > 0) { standEnd = standAnims[0].keyframeCount - 1; FixAnimationPose(standModel, standAnims[0]); }
+        if (walkCount > 0)  { walkEnd  = walkAnims[0].keyframeCount - 1; FixAnimationPose(walkModel, walkAnims[0]); }
+        if (runCount > 0)   { runEnd   = runAnims[0].keyframeCount - 1; FixAnimationPose(runModel, runAnims[0]); }
     }
         Matrix *standMat = standModel.boneMatrices, *walkMat = walkModel.boneMatrices, *runMat = runModel.boneMatrices;
 
@@ -265,7 +265,7 @@ int main() {
                 while (diff < -PI) diff += 2*PI;
                 smoothAng += diff * dt * 12.0f;
                 float faceAngle = smoothAng * RAD2DEG - 90.0f;
-                DrawModelEx(*activeModel, charPos, {0,1,0}, faceAngle, {pH*0.075f,pH*0.075f,pH*0.075f}, WHITE);
+                DrawModelEx(*activeModel, charPos, {0,1,0}, faceAngle, {pH*4.5f,pH*4.5f,pH*4.5f}, WHITE);
             } else {
                 DrawCube({pPos.x, pPos.y + pH/2, pPos.z}, 0.55f, pH, 0.55f, {220,50,50,255});
             }

@@ -1,4 +1,4 @@
-// Standalone character model viewer - no map, no terrain
+// Standalone character model viewer - uses Assimp node-tree animation evaluation
 #include "raylib.h"
 #include "raymath.h"
 #include "assimp_loader.h"
@@ -8,7 +8,7 @@ int main() {
     const int W = 1280, H = 720;
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetTraceLogLevel(LOG_WARNING);
-    InitWindow(W, H, "Character Test");
+    InitWindow(W, H, "Character Test (Assimp Anim)");
 
     Camera3D cam = {0};
     cam.position = {3, 2, 3};
@@ -17,79 +17,26 @@ int main() {
     cam.fovy = 60;
     cam.projection = CAMERA_PERSPECTIVE;
 
-    // Load character models
+    // Load model meshes + skeleton (using raylib model for mesh data/rendering)
     Model standModel = LoadModelAssimp("../assets/models/character/stand.glb");
     Model walkModel  = LoadModelAssimp("../assets/models/character/walk.glb");
     Model runModel   = LoadModelAssimp("../assets/models/character/run.glb");
 
-    int standCount = 0, walkCount = 0, runCount = 0;
-    ModelAnimation *standAnims = LoadModelAnimationsAssimp("../assets/models/character/stand.glb", &standCount);
-    ModelAnimation *walkAnims  = LoadModelAnimationsAssimp("../assets/models/character/walk.glb", &walkCount);
-    ModelAnimation *runAnims   = LoadModelAnimationsAssimp("../assets/models/character/run.glb", &runCount);
+    // Load Assimp animation runtimes (node tree + channels + bone mapping)
+    AssimpAnimationRuntime standRT = LoadAssimpAnimationRuntime("../assets/models/character/stand.glb");
+    AssimpAnimationRuntime walkRT  = LoadAssimpAnimationRuntime("../assets/models/character/walk.glb");
+    AssimpAnimationRuntime runRT   = LoadAssimpAnimationRuntime("../assets/models/character/run.glb");
 
-    // Fix animation keyframes: set translations to bindPose (files have no position animation)
-    if (standCount > 0 && standModel.skeleton.boneCount > 0)
-        FixAnimationPose(standModel, standAnims[0]);
-    if (walkCount > 0 && walkModel.skeleton.boneCount > 0)
-        FixAnimationPose(walkModel, walkAnims[0]);
-    if (runCount > 0 && runModel.skeleton.boneCount > 0)
-        FixAnimationPose(runModel, runAnims[0]);
+    bool hasChar = (standModel.skeleton.boneCount > 0);
+    Model *activeModel = &standModel;
+    AssimpAnimationRuntime *activeRT = standRT.valid ? &standRT : NULL;
 
+    int animFrame = 0;
+
+    // save boneMatrices pointer to prevent double-skinning
     Matrix *standMat = standModel.boneMatrices;
     Matrix *walkMat  = walkModel.boneMatrices;
     Matrix *runMat   = runModel.boneMatrices;
-
-    bool hasChar = (standModel.skeleton.boneCount > 0);
-    Model *activeModel = hasChar ? &standModel : NULL;
-
-    // (animation fix is now done by FixAnimationPose above)
-
-    // Find the first frame where ANY bone has non-zero translation
-    if (standCount > 0) {
-        int foundFrame = -1;
-        for (int f = 0; f < standAnims[0].keyframeCount; f++) {
-            bool hasTranslation = false;
-            for (int bi = 0; bi < standAnims[0].boneCount; bi++) {
-                Transform *kp = &standAnims[0].keyframePoses[f][bi];
-                if (fabsf(kp->translation.x) > 0.001f ||
-                    fabsf(kp->translation.y) > 0.001f ||
-                    fabsf(kp->translation.z) > 0.001f) {
-                    hasTranslation = true;
-                    break;
-                }
-            }
-            if (hasTranslation) { foundFrame = f; break; }
-        }
-        TraceLog(LOG_WARNING, "First anim frame with non-zero translation: %d", foundFrame);
-    }
-
-    TraceLog(LOG_WARNING, "stand bones=%d anim bones=%d frames=%d",
-        standModel.skeleton.boneCount, standCount > 0 ? standAnims[0].boneCount : 0,
-        standCount > 0 ? standAnims[0].keyframeCount : 0);
-
-    // Debug: print first 5 bones' first-frame animation data
-    if (standCount > 0) {
-        for (int i = 0; i < 5 && i < standAnims[0].boneCount; i++) {
-            Transform *kp = &standAnims[0].keyframePoses[0][i];
-            // convert from model space back to printable: just show raw values
-            TraceLog(LOG_WARNING, "  anim[0] bone[%d] frame0: t=(%.4f,%.4f,%.4f) r=(%.4f,%.4f,%.4f,%.4f) s=(%.4f,%.4f,%.4f)",
-                i, kp->translation.x, kp->translation.y, kp->translation.z,
-                kp->rotation.x, kp->rotation.y, kp->rotation.z, kp->rotation.w,
-                kp->scale.x, kp->scale.y, kp->scale.z);
-        }
-        // Also check the bind pose for same bones for comparison
-        for (int i = 0; i < 5 && i < standModel.skeleton.boneCount; i++) {
-            Transform *bp = &standModel.skeleton.bindPose[i];
-            TraceLog(LOG_WARNING, "  bind[%d]: t=(%.4f,%.4f,%.4f) s=(%.4f,%.4f,%.4f)",
-                i, bp->translation.x, bp->translation.y, bp->translation.z,
-                bp->scale.x, bp->scale.y, bp->scale.z);
-        }
-    }
-
-    // frame range
-    int startFrame = 0, endFrame = 0;
-    if (standCount > 0) endFrame = standAnims[0].keyframeCount - 1;
-    int animFrame = 0;
 
     DisableCursor();
 
@@ -112,28 +59,19 @@ int main() {
         }
 
         // switch animation with keys
-        ModelAnimation *cur = NULL;
-        if (IsKeyDown(KEY_TWO) && walkCount > 0) {
-            activeModel = &walkModel; cur = &walkAnims[0];
-            startFrame = 0; endFrame = walkAnims[0].keyframeCount - 1;
-        } else if (IsKeyDown(KEY_THREE) && runCount > 0) {
-            activeModel = &runModel; cur = &runAnims[0];
-            startFrame = 0; endFrame = runAnims[0].keyframeCount - 1;
-        } else if (standCount > 0) {
-            activeModel = &standModel; cur = &standAnims[0];
-            startFrame = 0; endFrame = standAnims[0].keyframeCount - 1;
+        if (IsKeyDown(KEY_TWO) && walkRT.valid) {
+            activeModel = &walkModel; activeRT = &walkRT;
+        } else if (IsKeyDown(KEY_THREE) && runRT.valid) {
+            activeModel = &runModel; activeRT = &runRT;
+        } else if (standRT.valid) {
+            activeModel = &standModel; activeRT = &standRT;
         }
 
-        // animate
-        if (cur && endFrame > startFrame) {
-            animFrame = startFrame + ((animFrame - startFrame + 1) % (endFrame - startFrame + 1));
-            if (animFrame < startFrame) animFrame = startFrame;
-
-            Matrix *saved = (activeModel == &standModel) ? standMat :
-                           (activeModel == &walkModel) ? walkMat : runMat;
-            activeModel->boneMatrices = saved;
-            UpdateModelAnimation(*activeModel, *cur, (float)animFrame);
-            activeModel->boneMatrices = NULL;
+        // animate using Assimp node-tree evaluation
+        if (activeRT) {
+            int maxF = activeRT->clips[0].keyframeCount;
+            animFrame = (animFrame + 1) % maxF;
+            UpdateModelAnimationAssimp(activeModel, activeRT, 0, (float)animFrame);
         }
 
         // orbit camera
@@ -148,7 +86,6 @@ int main() {
         BeginDrawing();
         ClearBackground({60, 60, 80, 255});
 
-        // grid floor
         BeginMode3D(cam);
         DrawGrid(20, 0.5f);
 
@@ -159,20 +96,21 @@ int main() {
         EndMode3D();
 
         DrawText("Press 1=stand 2=walk 3=run", 20, 20, 18, WHITE);
-        DrawText(TextFormat("Bones: %d  Frame: %d/%d  MeshFilter: see collectMeshes[]",
-            activeModel ? activeModel->skeleton.boneCount : 0,
-            animFrame, endFrame), 20, 45, 15, Fade(WHITE, 0.7f));
+        DrawText(TextFormat("Frame: %d/%d  Bones: %d",
+            animFrame, activeRT ? activeRT->clips[0].keyframeCount : 0,
+            standModel.skeleton.boneCount), 20, 45, 15, Fade(WHITE, 0.7f));
 
         EndDrawing();
     }
+
+    if (standRT.valid) UnloadAssimpAnimationRuntime(&standRT);
+    if (walkRT.valid)  UnloadAssimpAnimationRuntime(&walkRT);
+    if (runRT.valid)   UnloadAssimpAnimationRuntime(&runRT);
 
     if (hasChar) {
         UnloadModel(standModel);
         UnloadModel(walkModel);
         UnloadModel(runModel);
-        if (standAnims) UnloadModelAnimations(standAnims, standCount);
-        if (walkAnims)  UnloadModelAnimations(walkAnims, walkCount);
-        if (runAnims)   UnloadModelAnimations(runAnims, runCount);
     }
     CloseWindow();
     return 0;
