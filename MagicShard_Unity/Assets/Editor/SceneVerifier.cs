@@ -62,9 +62,7 @@ public class SceneVerifier : EditorWindow
             if (camCtrl != null) { pass++; Debug.Log("[PASS] CameraController on MainCamera"); }
             else { fail++; Debug.LogError("[FAIL] CameraController missing on MainCamera"); }
 
-            var camPI = cam.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-            if (camPI != null) { pass++; Debug.Log("[PASS] PlayerInput on MainCamera"); }
-            else { fail++; Debug.LogError("[FAIL] PlayerInput missing on MainCamera"); }
+            Debug.Log("[INFO] MainCamera does not require PlayerInput; input is read by PlayerController/CameraController.");
         }
         else { fail++; Debug.LogError("[FAIL] Main Camera not found!"); }
 

@@ -1,11 +1,3 @@
-# 编译输出
-build/
-*.exe
-*.obj
-*.lib
-*.a
-*.dll
-
 # IDE
 .vscode/
 .idea/
@@ -25,30 +17,10 @@ Thumbs.db
 *.log
 *.tmp
 
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-CPackConfig.cmake
-CPackSourceConfig.cmake
-CTestTestfile.cmake
-
 # 备份文件
 *_backup.glb
 *_backup.*
 *.bak
-
-# 你的问题所在
-_deps/
-*.ninja
-.ninja_log
-.ninja_lock
-
-# 其他常见遗漏
-CMakeUserPresets.json
-.vs/
-venv/ env/
 
 # Unity 项目
 MagicShard_Unity/Library/

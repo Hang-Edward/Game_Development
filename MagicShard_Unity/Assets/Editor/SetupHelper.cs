@@ -24,6 +24,12 @@ public class SetupHelper : EditorWindow
     [MenuItem("Tools/MagicShard/Build Scene &%b")]
     public static void BuildScene()
     {
+        if (EditorApplication.isPlaying)
+        {
+            Debug.LogWarning("Build Scene is an editor-only setup action. Exit Play Mode before running it.");
+            return;
+        }
+
         string scenePath = "Assets/Scenes/GameWorld.unity";
         var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         EditorSceneManager.SetActiveScene(scene);
@@ -57,6 +63,7 @@ public class SetupHelper : EditorWindow
 
         player.AddComponent<PlayerController>();
         player.AddComponent<CombatSystem>();
+        player.AddComponent<CharacterMaterialApplier>();
 
         if (characterModel != null)
         {
@@ -159,7 +166,7 @@ public class SetupHelper : EditorWindow
         CreateText(canvasObj, "AnimInfo_Text", "Speed: 0.00", 200, 30, 20, 50);
 
         var hint = CreateText(canvasObj, "Controls_Hint",
-            "[WASD]移动 [Shift]冲刺 [Ctrl]蹲下 [左键]攻击 [右键]格挡 [滚轮]缩放",
+            "[WASD] Move [Shift] Sprint [Ctrl] Crouch [LMB] Attack [RMB] Block [Wheel] Zoom",
             800, 30, 240, 670);
         var rt = hint.GetComponent<RectTransform>();
         rt.pivot = new Vector2(0.5f, 1);
@@ -168,7 +175,7 @@ public class SetupHelper : EditorWindow
         rt.anchoredPosition = new Vector2(0, -20);
 
         var prompt = CreateText(canvasObj, "Center_Prompt",
-            "点击画面开始游戏", 300, 50, 490, 335);
+            "Click to start", 300, 50, 490, 335);
         var prt = prompt.GetComponent<RectTransform>();
         prt.pivot = new Vector2(0.5f, 0.5f);
         prt.anchorMin = new Vector2(0.5f, 0.5f);

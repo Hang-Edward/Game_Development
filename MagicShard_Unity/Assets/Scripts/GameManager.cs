@@ -51,7 +51,7 @@ public class GameManager : MonoBehaviour
 
         // Notify UI of zone
         if (uiManager != null)
-            uiManager.ShowZoneText("银风森林", 3f);
+            uiManager.ShowZoneText("Silverwind Forest", 3f);
     }
 
     public void RestartGame()

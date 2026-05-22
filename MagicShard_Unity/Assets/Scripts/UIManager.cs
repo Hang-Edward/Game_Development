@@ -28,10 +28,10 @@ public class UIManager : MonoBehaviour
             playerAnimator = player.GetComponentInChildren<Animator>();
 
         if (controlsHint != null)
-            controlsHint.text = "[WASD]移动 [Shift]冲刺 [Ctrl]蹲下 [左键]攻击 [右键]格挡 [滚轮]缩放";
+            controlsHint.text = "[WASD] Move [Shift] Sprint [Ctrl] Crouch [LMB] Attack [RMB] Block [Wheel] Zoom";
 
         if (centerPromptText != null)
-            centerPromptText.text = "点击画面开始游戏";
+            centerPromptText.text = "Click to start";
     }
 
     private void Update()
