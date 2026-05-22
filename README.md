@@ -2,8 +2,6 @@
 
 Unity 2022.3 LTS 3D 开放世界冒险游戏（C#）。
 
-> 从 raylib + C++17 迁移而来，旧版代码保留在 `src/` 目录作为参考。
-
 ## 环境要求
 
 | 工具 | 版本要求 |
@@ -25,24 +23,12 @@ cd 项目目录
 1. 启动 Unity Hub
 2. 点击 "添加" → 选择 `MagicShard_Unity/` 目录
 3. Unity 会自动下载依赖 Package（Cinemachine、Input System、TextMeshPro 等）
-4. 在 Project 窗口中打开 `Assets/Scenes/GameWorld.unity`
-5. 点击 Play 按钮运行
 
-### 3. 复制模型资产
+### 3. 一键搭建场景
 
-首次运行前，需要将 GLB 模型文件复制到 Unity 项目：
+菜单栏 → **Tools → MagicShard → Setup Project**（配置动画 + 项目设置）
 
-```bash
-# 复制角色模型
-cp assets/models/character/*.glb MagicShard_Unity/Assets/Models/Character/
-# 复制地图模型
-cp assets/models/map_*.glb MagicShard_Unity/Assets/Models/Map/
-# 复制 BOSS 模型
-cp assets/models/boss_spider/*.glb MagicShard_Unity/Assets/Models/Boss_Spider/
-cp assets/models/boss3/*.glb MagicShard_Unity/Assets/Models/Boss3/
-```
-
-详见 `MagicShard_Unity/Assets/Animations/SETUP_GUIDE.md`。
+菜单栏 → **Tools → MagicShard → Build Scene**（自动搭建完整场景）
 
 ## 操作说明
 
@@ -63,33 +49,31 @@ cp assets/models/boss3/*.glb MagicShard_Unity/Assets/Models/Boss3/
 ```
 MagicShard_Unity/
 ├── Assets/
-│   ├── Scripts/           # C# 游戏脚本
-│   │   ├── PlayerController.cs
-│   │   ├── CameraController.cs
-│   │   ├── CombatSystem.cs
-│   │   ├── UIManager.cs
-│   │   ├── GameManager.cs
-│   │   └── AnimationStateController.cs
+│   ├── Scripts/                    # C# 游戏脚本
+│   │   ├── PlayerController.cs     # 移动/物理/输入
+│   │   ├── CameraController.cs     # 第三人称轨道相机
+│   │   ├── CombatSystem.cs         # 攻击系统
+│   │   ├── UIManager.cs            # HUD
+│   │   ├── GameManager.cs          # 游戏初始化
+│   │   ├── TerrainCollisionBuilder.cs  # 地形碰撞
+│   │   └── CharacterMaterialApplier.cs # 角色材质
+│   ├── Editor/                     # Editor 工具
+│   │   ├── SetupHelper.cs          # 一键搭建场景
+│   │   └── SceneVerifier.cs        # 场景检查
 │   ├── Settings/
-│   │   └── GameInput.inputactions   # 输入绑定配置
-│   ├── Animations/
-│   │   ├── Controllers/             # Animator Controller
-│   │   └── SETUP_GUIDE.md           # Unity 设置指南
-│   ├── Models/          # GLB 模型文件
-│   ├── Scenes/          # Unity 场景
-│   ├── Prefabs/         # 预制体
-│   └── UI/              # UI 资源
-├── Packages/
-│   └── manifest.json    # 包依赖
-└── ProjectSettings/     # Unity 项目设置
+│   │   └── GameInput.inputactions  # 输入绑定
+│   ├── Animations/Controllers/     # Animator Controller
+│   ├── Models/                     # FBX 模型文件
+│   ├── Scenes/                     # Unity 场景
+│   └── UI/Fonts/                   # 字体
+├── Packages/manifest.json          # 包依赖
+└── ProjectSettings/                # Unity 项目设置
 ```
 
-## 旧版 (raylib C++)
+## 资产
 
-旧版 raylib 代码保留在 `src/` 和 `CMakeLists.txt`，如需编译：
-
-```bash
-cd build && cmake .. -G "MinGW Makefiles" && cmake --build . -j4
-./map1.exe   # 第一章
-./map2.exe   # 第二章
-```
+原始 GLB 模型位于 `assets/models/`，用 Blender 转换为 FBX 后放入 Unity 项目：
+- `assets/models/map_01_forest.glb` (304MB, Git LFS)
+- `assets/models/character/` (stand.walk.run.glb → .fbx)
+- `assets/models/boss_spider/` (idle, walk, attack)
+- `assets/models/boss3/` (static, move, attack1-3, defense, die, stepback)

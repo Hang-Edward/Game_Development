@@ -208,6 +208,38 @@ cd build
 
 ---
 
+### v0.4 — 底层重构：迁移至 Unity 引擎 + 地形碰撞 + 角色物理
+
+#### 背景
+角色动画 GLB 文件存在根本性缺陷（所有 position keys 为 (0,0,0)），FixAnimationPose 暴力覆盖方案无法彻底解决骨骼扭曲问题。决定迁移到 Unity 引擎利用其成熟的动画系统。
+
+#### 改动文件
+- `MagicShard_Unity/` — 全新 Unity 2022.3 LTS 项目
+- `Assets/Scripts/PlayerController.cs` — 重写为直接输入读取 + 地面吸附 + Coyote Time + 跳跃物理
+- `Assets/Scripts/CameraController.cs` — 重写为直接读取鼠标输入，不依赖 PlayerInput
+- `Assets/Scripts/TerrainCollisionBuilder.cs` — 新增：运行时自动为地形网格添加 MeshCollider
+- `Assets/Scripts/CharacterMaterialApplier.cs` — 新增：角色材质管理
+- `Assets/Editor/SetupHelper.cs` — 完全重写：一键搭建场景 + FBX 配置 + 材质升级 (URP)
+- `Assets/Editor/SceneVerifier.cs` — 新增：场景完整性检查
+- `Assets/Settings/GameInput.inputactions` — 输入系统绑定定义
+
+#### 新增功能/修复
+- **引擎迁移**：从 raylib 6.0 + C++17 迁移到 Unity 2022.3 LTS + C#
+- **动画系统**：Unity Mecanim Animator + Humanoid Rig + Blend Tree 替代手动 CPU 蒙皮
+- **物理系统**：CharacterController + PhysX 替代手动物理，新增地面吸附/黏附/跳跃缓冲
+- **输入系统**：直接读取 Keyboard.current/Mouse.current，不使用 PlayerInput 事件模式
+- **地形碰撞**：TerrainCollisionBuilder 组件运行时自动为地形网格生成碰撞体
+- **一键搭建**：SetupHelper.BuildScene() 自动创建完整场景（Player + 相机 + 地形 + UI）
+- **材质升级**：自动将 Standard Shader 材质映射到 URP/Lit，保持纹理绑定
+
+#### 注意事项
+- 旧版 C++ 源码已从仓库中删除（src/、CMakeLists.txt、_deps/、build/）
+- GLB 模型通过 Blender 转换为 FBX 后再导入 Unity
+- 输入使用直接读取方式，保留 PlayerInput 组件仅用于编辑器配置
+- 项目当前需要 Assets/Scenes/GameWorld.unity 场景文件才能运行
+
+---
+
 ### v0.4 — 底层重构：迁移至 Unity 引擎
 
 #### 背景

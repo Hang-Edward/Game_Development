@@ -11,7 +11,7 @@
 # Unity Animator Controller
 *.controller text=auto
 
-# Unity 脚本
+# C# 脚本
 *.cs text=auto diff=csharp
 
 # 着色器
@@ -30,10 +30,5 @@
 # 图片资源（不进行 diff）
 *.png -text diff=image
 
-# 旧版 C++ 源码
-src/*.cpp linguist-language=C++
-src/*.h linguist-language=C++
-
-# 不将 build/ 和 Unity Library 计入语言统计
-build/* linguist-vendored
+# Unity Library 不计入语言统计
 MagicShard_Unity/Library/* linguist-vendored
