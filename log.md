@@ -249,3 +249,20 @@ cd build
 - Unity 项目首次打开需要下载 Package 依赖（自动）
 - 旧版 C++ 源码保留在 `src/` 目录作为参考，不再编译
 - 设置步骤详见 `MagicShard_Unity/Assets/Animations/SETUP_GUIDE.md`
+
+---
+
+### v0.5 - Unity character movement and animation polish
+
+#### Changed files
+- `MagicShard_Unity/Assets/Scripts/PlayerController.cs`
+- `MagicShard_Unity/Assets/Editor/CharacterAnimationRepairer.cs`
+- `MagicShard_Unity/Assets/Editor/CharacterMaterialPostprocessor.cs`
+- `MagicShard_Unity/Assets/Models/Character/stand.fbx.meta`
+- `MagicShard_Unity/Assets/Models/Character/walk.fbx.meta`
+- `MagicShard_Unity/Assets/Models/Character/run.fbx.meta`
+
+#### Fixes
+- Enabled loop pose blending on Idle/Walk/Run imports to smooth animation wraparound.
+- Changed visual underground rescue from per-frame foot pinning to whole-model rescue only, avoiding periodic walk/run twitch caused by bounds changes during foot motion.
+- Locked jump horizontal velocity at takeoff so sprint jumps carry sprint speed and walk jumps carry walk speed.

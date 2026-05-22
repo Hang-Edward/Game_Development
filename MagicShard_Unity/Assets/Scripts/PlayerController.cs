@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private float groundClampOffset = 0.03f;
     [SerializeField] private float visualGroundOffset = 0.02f;
+    [SerializeField] private float visualRescueThreshold = 0.25f;
     [SerializeField] private LayerMask groundMask = ~0;
 
     [Header("References")]
@@ -39,6 +40,8 @@ public class PlayerController : MonoBehaviour
     private bool jumping;
     private float jumpGroundIgnoreTimer;
     private float lastGroundedTimer;
+    private Vector3 lockedAirMoveDirection;
+    private Vector3 lastGroundedMoveDirection;
 
     private float attackCooldown = 0.35f;
     private float attackTimer;
@@ -85,19 +88,9 @@ public class PlayerController : MonoBehaviour
         if (kb.aKey.isPressed) moveInput.x = -1;
         if (kb.dKey.isPressed) moveInput.x = 1;
 
-        sprint = kb.leftShiftKey.isPressed && !crouching;
         crouching = kb.leftCtrlKey.isPressed;
+        sprint = kb.leftShiftKey.isPressed && !crouching;
         blocking = Mouse.current != null && Mouse.current.rightButton.isPressed;
-
-        // Jump
-        if (kb.spaceKey.wasPressedThisFrame && CanJump())
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            grounded = false;
-            jumping = true;
-            jumpGroundIgnoreTimer = jumpGroundIgnoreTime;
-            lastGroundedTimer = 0f;
-        }
 
         // Attack
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && attackTimer <= 0 && !blocking)
@@ -121,7 +114,33 @@ public class PlayerController : MonoBehaviour
         Vector3 desiredMove = forward * moveInput.y + right * moveInput.x;
         if (desiredMove.magnitude > 1f) desiredMove.Normalize();
         hasMoveInput = desiredMove.sqrMagnitude > 0.01f;
-        moveDirection = desiredMove * currentSpeed;
+
+        if (grounded)
+        {
+            moveDirection = desiredMove * currentSpeed;
+            lastGroundedMoveDirection = moveDirection;
+        }
+        else if (jumping)
+        {
+            moveDirection = lockedAirMoveDirection;
+        }
+        else
+        {
+            moveDirection = desiredMove * currentSpeed;
+        }
+
+        // Jump
+        if (kb.spaceKey.wasPressedThisFrame && CanJump())
+        {
+            lockedAirMoveDirection = hasMoveInput ? desiredMove * currentSpeed : Vector3.zero;
+
+            moveDirection = lockedAirMoveDirection;
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            grounded = false;
+            jumping = true;
+            jumpGroundIgnoreTimer = jumpGroundIgnoreTime;
+            lastGroundedTimer = 0f;
+        }
 
         // Apply horizontal movement
         characterController.Move(moveDirection * Time.deltaTime);
@@ -215,7 +234,7 @@ public class PlayerController : MonoBehaviour
         if (TryGetHighestGroundBelow(out RaycastHit hit))
             targetY = Mathf.Max(targetY, hit.point.y + visualGroundOffset);
 
-        if (combinedBounds.min.y >= targetY)
+        if (combinedBounds.max.y >= targetY + visualRescueThreshold)
             return;
 
         Vector3 localPosition = animatedModelRoot.localPosition;
@@ -279,6 +298,7 @@ public class PlayerController : MonoBehaviour
 
         grounded = true;
         jumping = false;
+        lockedAirMoveDirection = Vector3.zero;
         lastGroundedTimer = coyoteTime;
     }
 
@@ -406,6 +426,7 @@ public class PlayerController : MonoBehaviour
                 jumping = false;
                 grounded = true;
                 velocity.y = -2f;
+                lockedAirMoveDirection = Vector3.zero;
                 lastGroundedTimer = coyoteTime;
             }
             else

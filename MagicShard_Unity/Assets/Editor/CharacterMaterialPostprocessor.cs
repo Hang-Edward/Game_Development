@@ -48,6 +48,7 @@ public class CharacterMaterialPostprocessor : AssetPostprocessor
             clip.heightFromFeet = true;
             clip.lockRootPositionXZ = true;
             clip.keepOriginalPositionXZ = true;
+            clip.loopPose = true;
         }
 
         importer.clipAnimations = clips;

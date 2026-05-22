@@ -73,6 +73,7 @@ public static class CharacterAnimationRepairer
             clip.heightFromFeet = true;
             clip.lockRootPositionXZ = true;
             clip.keepOriginalPositionXZ = true;
+            clip.loopPose = true;
         }
 
         importer.clipAnimations = clips;
