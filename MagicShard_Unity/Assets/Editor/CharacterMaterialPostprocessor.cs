@@ -44,7 +44,7 @@ public class CharacterMaterialPostprocessor : AssetPostprocessor
             clip.lockRootRotation = true;
             clip.keepOriginalOrientation = true;
             clip.lockRootHeightY = true;
-            clip.keepOriginalPositionY = true;
+            clip.keepOriginalPositionY = false;
             clip.heightFromFeet = true;
             clip.lockRootPositionXZ = true;
             clip.keepOriginalPositionXZ = true;

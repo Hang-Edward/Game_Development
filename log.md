@@ -298,3 +298,18 @@ cd build
 - Enabled loop pose blending on Idle/Walk/Run imports to smooth animation wraparound.
 - Changed visual underground rescue from per-frame foot pinning to whole-model rescue only, avoiding periodic walk/run twitch caused by bounds changes during foot motion.
 - Locked jump horizontal velocity at takeoff so sprint jumps carry sprint speed and walk jumps carry walk speed.
+- Narrowed stop-sink protection to the movement-key release window: only after releasing movement input does the controller preserve the last moving visual/body height to prevent the stop animation from dipping then snapping back.
+- Replaced release-only visual protection with continuous non-jump baked-mesh grounding, so walk/run animation cannot draw the character body below terrain while jump visuals remain free.
+- Reverted visual mesh height correction and moved grounding back to the CharacterController feet: non-jump movement now snaps to the highest walkable ground hit under the player.
+- Removed forced movement-time ground snapping and runtime visual height correction; fixed character animation imports to bake root Y from feet instead of preserving original clip Y.
+- Added stable Walk/Run visual lift and enabled Locomotion Foot IK to compensate for movement clips that still sit lower than Idle without touching player physics.
+- Disabled Locomotion Foot IK because the imported humanoid leg mapping can over-solve and fold the lower body during movement.
+- Increased Walk-only visual lift to keep lower legs above ground while leaving Run unchanged.
+- Fine-tuned Walk visual lift so ankles clear the ground.
+- Synced visual lift fields into GameWorld scene and raised Walk lift after scene serialization kept the old removed grounding fields.
+- Reduced Walk visual lift slightly after the scene value took effect and caused mild floating.
+- Tuned Walk visual lift from 1.05 to 1.0.
+- Tuned Walk visual lift from 1.0 to 0.95.
+- Tuned Walk visual lift from 0.95 to 0.85.
+- Decoupled movement visual lift from the grounded flag so small ground-probe flickers do not cancel the Walk correction.
+- Added an editor/batch character grounding calibrator that samples Idle/Walk/Run foot bones and writes calibrated visual lift values into GameWorld.

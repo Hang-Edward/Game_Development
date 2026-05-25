@@ -69,7 +69,7 @@ public static class CharacterAnimationRepairer
             clip.lockRootRotation = true;
             clip.keepOriginalOrientation = true;
             clip.lockRootHeightY = true;
-            clip.keepOriginalPositionY = true;
+            clip.keepOriginalPositionY = false;
             clip.heightFromFeet = true;
             clip.lockRootPositionXZ = true;
             clip.keepOriginalPositionXZ = true;
@@ -123,6 +123,7 @@ public static class CharacterAnimationRepairer
 
         var locomotion = stateMachine.AddState("Locomotion");
         locomotion.motion = blendTree;
+        locomotion.iKOnFeet = false;
         locomotion.writeDefaultValues = true;
         stateMachine.defaultState = locomotion;
 
