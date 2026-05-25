@@ -210,13 +210,20 @@ public class PlayerController : MonoBehaviour
 
     private float GetTargetVisualLift()
     {
-        if (jumping || !hasMoveInput)
+        if (jumping)
             return 0f;
 
-        if (sprint && !crouching && !blocking)
-            return runVisualLift;
+        float locomotion = hasMoveInput ? GetLocomotionBlend() : 0f;
+        if (animator != null)
+            locomotion = animator.GetFloat("Speed");
 
-        return walkVisualLift;
+        if (locomotion <= 0.01f)
+            return 0f;
+
+        if (locomotion <= 0.55f)
+            return Mathf.Lerp(0f, walkVisualLift, locomotion / 0.55f);
+
+        return Mathf.Lerp(walkVisualLift, runVisualLift, Mathf.InverseLerp(0.55f, 1f, locomotion));
     }
 
     private void SnapToGround()

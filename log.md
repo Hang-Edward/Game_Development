@@ -313,3 +313,4 @@ cd build
 - Tuned Walk visual lift from 0.95 to 0.85.
 - Decoupled movement visual lift from the grounded flag so small ground-probe flickers do not cancel the Walk correction.
 - Added an editor/batch character grounding calibrator that samples Idle/Walk/Run foot bones and writes calibrated visual lift values into GameWorld.
+- Synced visual lift to the Animator Speed blend value so stopping movement fades the height correction with the Walk-to-Idle transition.
