@@ -53,19 +53,20 @@ public static class CharacterAnimationRepairer
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             importer.importAnimation = true;
             importer.materialLocation = ModelImporterMaterialLocation.External;
-            ConfigureInPlaceClips(importer);
+            ConfigureInPlaceClips(importer, path);
             importer.SaveAndReimport();
         }
     }
 
-    private static void ConfigureInPlaceClips(ModelImporter importer)
+    private static void ConfigureInPlaceClips(ModelImporter importer, string assetPath)
     {
         var clips = importer.clipAnimations;
         if (clips == null || clips.Length == 0)
             clips = importer.defaultClipAnimations;
 
-        foreach (var clip in clips)
+        for (int i = 0; i < clips.Length; i++)
         {
+            var clip = clips[i];
             clip.lockRootRotation = true;
             clip.keepOriginalOrientation = true;
             clip.lockRootHeightY = true;
@@ -74,9 +75,29 @@ public static class CharacterAnimationRepairer
             clip.lockRootPositionXZ = true;
             clip.keepOriginalPositionXZ = true;
             clip.loopPose = true;
+
+            if (IsWalkClip(assetPath, clip) && clip.lastFrame >= 25f)
+                clip.lastFrame = 24f;
+
+            if (IsRunClip(assetPath, clip) && clip.lastFrame >= 17f)
+                clip.lastFrame = 16f;
+
+            clips[i] = clip;
         }
 
         importer.clipAnimations = clips;
+    }
+
+    private static bool IsRunClip(string assetPath, ModelImporterClipAnimation clip)
+    {
+        return assetPath.EndsWith("/run.fbx", System.StringComparison.OrdinalIgnoreCase) ||
+               clip.name.IndexOf("Run", System.StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static bool IsWalkClip(string assetPath, ModelImporterClipAnimation clip)
+    {
+        return assetPath.EndsWith("/walk.fbx", System.StringComparison.OrdinalIgnoreCase) ||
+               clip.name.IndexOf("Walk", System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private static AnimationClip LoadClip(string path, string expectedName)

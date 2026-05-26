@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float groundStickDistance = 0.35f;
     [SerializeField] private float jumpGroundIgnoreTime = 0.18f;
     [SerializeField] private float coyoteTime = 0.12f;
+    [SerializeField] private float locomotionGroundGraceTime = 0.08f;
     [SerializeField] private float groundClampOffset = 0.03f;
     [SerializeField] private LayerMask groundMask = ~0;
 
@@ -45,6 +46,7 @@ public class PlayerController : MonoBehaviour
     private bool jumping;
     private float jumpGroundIgnoreTimer;
     private float lastGroundedTimer;
+    private float locomotionGroundGraceTimer;
     private Vector3 lockedAirMoveDirection;
 
     private float attackCooldown = 0.35f;
@@ -106,7 +108,7 @@ public class PlayerController : MonoBehaviour
         // Calculate speed
         if (blocking) currentSpeed = blockSpeed;
         else if (crouching) currentSpeed = crouchSpeed;
-        else if (sprint && grounded) currentSpeed = sprintSpeed;
+        else if (sprint) currentSpeed = sprintSpeed;
         else currentSpeed = walkSpeed;
 
         // Calculate move direction relative to camera
@@ -125,6 +127,12 @@ public class PlayerController : MonoBehaviour
         }
         else if (jumping)
         {
+            if (lockedAirMoveDirection.sqrMagnitude <= 0.0001f && hasMoveInput)
+            {
+                lockedAirMoveDirection = desiredMove * currentSpeed;
+                jumpVisualLift = Mathf.Max(jumpVisualLift, GetVisualLiftForLocomotion(GetLocomotionBlend()));
+            }
+
             moveDirection = lockedAirMoveDirection;
         }
         else
@@ -176,7 +184,7 @@ public class PlayerController : MonoBehaviour
         {
             float locomotionBlend = GetLocomotionBlend();
             animator.SetFloat("Speed", locomotionBlend, 0.08f, Time.deltaTime);
-            animator.SetBool("Sprint", sprint && grounded);
+            animator.SetBool("Sprint", sprint && hasMoveInput && !crouching && !blocking);
             animator.SetBool("Crouch", crouching);
             animator.SetBool("Block", blocking);
             animator.SetBool("Grounded", grounded);
@@ -219,6 +227,11 @@ public class PlayerController : MonoBehaviour
         if (animator != null)
             locomotion = animator.GetFloat("Speed");
 
+        return GetVisualLiftForLocomotion(locomotion);
+    }
+
+    private float GetVisualLiftForLocomotion(float locomotion)
+    {
         if (locomotion <= 0.01f)
             return 0f;
 
@@ -372,7 +385,7 @@ public class PlayerController : MonoBehaviour
         if (!hasMoveInput)
             return 0f;
 
-        if (sprint && grounded && !crouching && !blocking)
+        if (sprint && !crouching && !blocking)
             return 1f;
 
         return 0.55f;
@@ -386,10 +399,25 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        grounded = CanEvaluateGround() && (characterController.isGrounded || ProbeGround(out _));
-        if (grounded)
+        bool detectedGround = CanEvaluateGround() && (characterController.isGrounded || ProbeGround(out _));
+        if (detectedGround)
+        {
+            grounded = true;
             lastGroundedTimer = coyoteTime;
-        else if (lastGroundedTimer > 0f)
+            locomotionGroundGraceTimer = locomotionGroundGraceTime;
+            return;
+        }
+
+        if (hasMoveInput && velocity.y <= 0f && locomotionGroundGraceTimer > 0f)
+        {
+            locomotionGroundGraceTimer -= Time.deltaTime;
+            grounded = true;
+            lastGroundedTimer = coyoteTime;
+            return;
+        }
+
+        grounded = false;
+        if (lastGroundedTimer > 0f)
             lastGroundedTimer -= Time.deltaTime;
     }
 
@@ -416,8 +444,23 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        grounded = touchedGround || (CanEvaluateGround() && ProbeGround(out _));
-        if (grounded)
+        bool detectedGround = touchedGround || (CanEvaluateGround() && ProbeGround(out _));
+        if (detectedGround)
+        {
+            grounded = true;
             lastGroundedTimer = coyoteTime;
+            locomotionGroundGraceTimer = locomotionGroundGraceTime;
+            return;
+        }
+
+        if (hasMoveInput && velocity.y <= 0f && locomotionGroundGraceTimer > 0f)
+        {
+            locomotionGroundGraceTimer -= Time.deltaTime;
+            grounded = true;
+            lastGroundedTimer = coyoteTime;
+            return;
+        }
+
+        grounded = false;
     }
 }

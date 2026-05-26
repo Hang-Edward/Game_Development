@@ -317,3 +317,8 @@ cd build
 - Prevented ground clamping while jumping or rising so jump impulses are not immediately snapped back to terrain.
 - Increased the short post-jump ground ignore window to avoid stale grounded contacts eating the first jump frames.
 - Preserved the movement visual lift through airborne jumps so moving jumps no longer drop the model back to uncorrected height mid-air.
+- Trimmed the imported Run clip by one trailing frame and made the animation repair tool preserve that trim, reducing sprint loop pops caused by a non-matching end frame.
+- Decoupled sprint movement and Run animation selection from transient grounded flickers so Shift sprint no longer drops to Walk for a frame on uneven terrain.
+- Added a short locomotion ground grace window so Walk movement ignores one-frame ground probe misses instead of briefly falling and snapping back.
+- Trimmed the imported Walk clip by one trailing frame and made the animation repair tool preserve that trim, reducing walk loop pops caused by a non-matching end frame.
+- Allowed jump-started-in-place movement to acquire horizontal air velocity on the first mid-air movement input, matching move-then-jump behavior.
