@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gravity = -25f;
     [SerializeField] private float groundSnapDistance = 200f;
     [SerializeField] private float groundStickDistance = 0.35f;
-    [SerializeField] private float jumpGroundIgnoreTime = 0.12f;
+    [SerializeField] private float jumpGroundIgnoreTime = 0.18f;
     [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private float groundClampOffset = 0.03f;
     [SerializeField] private LayerMask groundMask = ~0;
@@ -36,6 +36,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity;
     private float currentSpeed;
     private float currentVisualLift;
+    private float jumpVisualLift;
     private bool grounded;
     private bool sprint;
     private bool crouching;
@@ -135,6 +136,7 @@ public class PlayerController : MonoBehaviour
         if (kb.spaceKey.wasPressedThisFrame && CanJump())
         {
             lockedAirMoveDirection = hasMoveInput ? desiredMove * currentSpeed : Vector3.zero;
+            jumpVisualLift = Mathf.Max(currentVisualLift, GetTargetVisualLift());
 
             moveDirection = lockedAirMoveDirection;
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -211,7 +213,7 @@ public class PlayerController : MonoBehaviour
     private float GetTargetVisualLift()
     {
         if (jumping)
-            return 0f;
+            return jumpVisualLift;
 
         float locomotion = hasMoveInput ? GetLocomotionBlend() : 0f;
         if (animator != null)
@@ -266,6 +268,9 @@ public class PlayerController : MonoBehaviour
 
     private void ClampAboveGround()
     {
+        if (jumping || !CanEvaluateGround() || velocity.y > 0f)
+            return;
+
         if (!TryGetWalkableGroundAt(transform.position, out RaycastHit hit))
             return;
 
@@ -400,6 +405,7 @@ public class PlayerController : MonoBehaviour
                 grounded = true;
                 velocity.y = -2f;
                 lockedAirMoveDirection = Vector3.zero;
+                jumpVisualLift = 0f;
                 lastGroundedTimer = coyoteTime;
             }
             else

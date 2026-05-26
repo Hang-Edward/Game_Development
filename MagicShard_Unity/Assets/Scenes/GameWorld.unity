@@ -6893,7 +6893,7 @@ MonoBehaviour:
   gravity: -25
   groundSnapDistance: 50
   groundStickDistance: 0.35
-  jumpGroundIgnoreTime: 0.12
+  jumpGroundIgnoreTime: 0.18
   coyoteTime: 0.12
   groundClampOffset: 0.03
   groundMask:

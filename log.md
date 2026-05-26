@@ -314,3 +314,6 @@ cd build
 - Decoupled movement visual lift from the grounded flag so small ground-probe flickers do not cancel the Walk correction.
 - Added an editor/batch character grounding calibrator that samples Idle/Walk/Run foot bones and writes calibrated visual lift values into GameWorld.
 - Synced visual lift to the Animator Speed blend value so stopping movement fades the height correction with the Walk-to-Idle transition.
+- Prevented ground clamping while jumping or rising so jump impulses are not immediately snapped back to terrain.
+- Increased the short post-jump ground ignore window to avoid stale grounded contacts eating the first jump frames.
+- Preserved the movement visual lift through airborne jumps so moving jumps no longer drop the model back to uncorrected height mid-air.
