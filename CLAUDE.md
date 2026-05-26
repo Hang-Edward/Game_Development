@@ -72,9 +72,9 @@ PlayerController 管理角色移动、物理和输入，核心机制：
 - **地面检测**: CharacterController.isGrounded + 球形射线探测（SphereCast）双重验证
 - **地面吸附** (`SnapToGround`): 在 Start 时从 Y+5 向下射线检测，将角色吸附到地形表面
 - **Coyote Time** (`coyoteTime` = 0.12s): 离开地面后短暂时间内仍可跳跃
-- **跳跃忽略** (`jumpGroundIgnoreTime` = 0.12s): 起跳后短暂忽略地面碰撞，防止起跳瞬间被地面拉回
+- **跳跃忽略** (`jumpGroundIgnoreTime` = 0.18s): 起跳后短暂忽略地面碰撞，防止起跳瞬间被地面拉回
 - **模型锁定** (`LateUpdate`): 每帧将动画模型子对象的位置/旋转锁定到初始值，防止根运动干扰
-- **视觉补偿** (`KeepVisibleModelAboveControllerFeet`): 当模型脚部穿模到地面以下时自动抬高
+- **视觉抬高** (`walkVisualLift`/`runVisualLift`): 根据移动速度抬高模型位置防止脚部穿模，平滑过渡
 
 ## 角色动画管线
 
