@@ -12,7 +12,8 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float minDistance = 2f;
     [SerializeField] private float maxDistance = 12f;
     [SerializeField] private float mouseSensitivity = 0.2f;
-    [SerializeField] private float scrollSpeed = 0.08f;
+    [SerializeField] private float scrollSpeed = 0.6f;
+    [SerializeField] private float zoomSmoothTime = 0.08f;
     [SerializeField] private float yaw;
     [SerializeField] private float pitch = 25f;
     [SerializeField] private float minPitch = -30f;
@@ -23,6 +24,8 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float smoothTime = 0.08f;
 
     private Vector3 smoothVelocity;
+    private float targetDistance;
+    private float zoomVelocity;
     private bool cursorCaptured = true;
 
     private void Awake()
@@ -32,6 +35,8 @@ public class CameraController : MonoBehaviour
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null) target = player.transform;
         }
+        distance = Mathf.Clamp(distance, minDistance, maxDistance);
+        targetDistance = distance;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -48,7 +53,10 @@ public class CameraController : MonoBehaviour
             pitch -= delta.y * mouseSensitivity;
             float scrollDelta = Mouse.current.scroll.ReadValue().y;
             if (Mathf.Abs(scrollDelta) > 0.01f)
-                distance -= scrollDelta * scrollSpeed;
+            {
+                float scrollSteps = Mathf.Abs(scrollDelta) > 1f ? scrollDelta / 120f : scrollDelta;
+                targetDistance = Mathf.Clamp(targetDistance - scrollSteps * scrollSpeed, minDistance, maxDistance);
+            }
         }
 
         // ESC to toggle cursor
@@ -68,7 +76,8 @@ public class CameraController : MonoBehaviour
         if (!cursorCaptured) return;
 
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
-        distance = Mathf.Clamp(distance, minDistance, maxDistance);
+        targetDistance = Mathf.Clamp(targetDistance, minDistance, maxDistance);
+        distance = Mathf.SmoothDamp(distance, targetDistance, ref zoomVelocity, zoomSmoothTime);
 
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
         Vector3 targetPosition = target.position + targetOffset;

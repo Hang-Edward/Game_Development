@@ -322,3 +322,4 @@ cd build
 - Added a short locomotion ground grace window so Walk movement ignores one-frame ground probe misses instead of briefly falling and snapping back.
 - Trimmed the imported Walk clip by one trailing frame and made the animation repair tool preserve that trim, reducing walk loop pops caused by a non-matching end frame.
 - Allowed jump-started-in-place movement to acquire horizontal air velocity on the first mid-air movement input, matching move-then-jump behavior.
+- Normalized mouse wheel zoom input and smoothed camera distance so view zoom changes continuously instead of jumping between near/far clamps.

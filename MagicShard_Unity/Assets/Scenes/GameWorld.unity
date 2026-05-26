@@ -5402,7 +5402,8 @@ MonoBehaviour:
   minDistance: 2
   maxDistance: 12
   mouseSensitivity: 0.2
-  scrollSpeed: 0.08
+  scrollSpeed: 0.6
+  zoomSmoothTime: 0.08
   yaw: 0
   pitch: 25
   minPitch: -30
