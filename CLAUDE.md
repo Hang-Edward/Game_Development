@@ -48,6 +48,12 @@ Unity 项目位于 `MagicShard_Unity/`，GLB 模型文件位于 `assets/models/`
 | `CharacterMaterialApplier.cs` | 角色材质管理 |
 | `SetupHelper.cs` (Editor) | 一键搭建场景 + 材质升级 + 项目配置 |
 | `SceneVerifier.cs` (Editor) | 场景完整性检查 |
+| `CharacterAnimationRepairer.cs` (Editor) | 修复 Animator Controller 动画绑定 |
+| `CharacterGroundingCalibrator.cs` (Editor) | 校准角色地面接触参数 |
+| `CharacterMaterialPostprocessor.cs` (Editor) | 角色材质导入后处理 |
+| `CharacterMaterialRepairer.cs` (Editor) | 修复角色材质资产 |
+| `CharacterMaterialTools.cs` (Editor) | 应用角色材质到模型 |
+| `TerrainCollisionTools.cs` (Editor) | 修复地形碰撞器 |
 
 ## 输入系统
 
@@ -75,6 +81,7 @@ PlayerController 管理角色移动、物理和输入，核心机制：
 - **跳跃忽略** (`jumpGroundIgnoreTime` = 0.18s): 起跳后短暂忽略地面碰撞，防止起跳瞬间被地面拉回
 - **模型锁定** (`LateUpdate`): 每帧将动画模型子对象的位置/旋转锁定到初始值，防止根运动干扰
 - **视觉抬高** (`walkVisualLift`/`runVisualLift`): 根据移动速度抬高模型位置防止脚部穿模，平滑过渡
+- **地面黏附** (`StickToGround`): 每帧探测地面高度差，将角色吸附到地形表面跟随起伏
 
 ## 角色动画管线
 
@@ -87,7 +94,7 @@ PlayerController 管理角色移动、物理和输入，核心机制：
           → GPU 蒙皮（Unity 自动处理）
 ```
 
-Blend Tree 阈值: Idle=0, Walk=3, Run=6。Speed 参数由 PlayerController 根据当前速度设置。
+Blend Tree 阈值: Idle=0, Walk=3, Run=6。Speed 参数由 `PlayerController.GetLocomotionBlend()` 根据当前速度计算。注意 Sprint 动画仅在 `hasMoveInput && !crouching && !blocking` 时激活（即冲刺时需要有移动输入且非蹲下/格挡状态）。
 
 ## 地形碰撞系统
 
@@ -102,6 +109,11 @@ Blend Tree 阈值: Idle=0, Walk=3, Run=6。Speed 参数由 PlayerController 根�
 | Setup Project | Ctrl+Shift+S | 更新 Animator Controller 动画绑定 + 输入/项目设置 |
 | Build Scene | Ctrl+Shift+B | 一键重建完整场景（Player + 相机 + 地形 + UI + 材质升级） |
 | Verify Scene | - | 检查场景完整性（Player、Camera、Terrain、UI、材质） |
+| Repair Character Animator | - | 修复 Animator Controller 动画绑定问题 |
+| Calibrate Character Grounding | - | 校准角色与地面的接触参数 |
+| Apply Character Materials | - | 应用角色材质到模型 |
+| Repair Character Material Assets | - | 修复角色材质资产问题 |
+| Repair Terrain Colliders | - | 修复地形碰撞器 |
 
 ## 材质管线
 
