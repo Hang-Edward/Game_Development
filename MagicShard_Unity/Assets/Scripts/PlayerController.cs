@@ -246,15 +246,39 @@ public class PlayerController : MonoBehaviour
         if (characterController == null)
             return;
 
-        if (!TryGetWalkableGroundAt(transform.position, out RaycastHit hit))
-            return;
+        // Try main position first, then sample nearby points
+        Vector3 pos = transform.position;
+        Vector3[] samplePoints = new Vector3[] {
+            pos,
+            pos + new Vector3(5, 0, 0),
+            pos + new Vector3(-5, 0, 0),
+            pos + new Vector3(0, 0, 5),
+            pos + new Vector3(0, 0, -5),
+            pos + new Vector3(10, 0, 0),
+            pos + new Vector3(-10, 0, 0),
+        };
 
+        foreach (var sample in samplePoints)
+        {
+            if (TryGetWalkableGroundAt(sample, out RaycastHit hit))
+            {
+                float radius = characterController != null ? characterController.radius * 0.9f : 0.3f;
+                characterController.enabled = false;
+                transform.position = new Vector3(sample.x, hit.point.y + groundClampOffset + radius, sample.z);
+                characterController.enabled = true;
+                velocity.y = -2f;
+                grounded = true;
+                jumping = false;
+                return;
+            }
+        }
+
+        // Fallback: just place at a reasonable height and hope the safety ground catches
+        Debug.LogWarning("SnapToGround: no terrain found near player, using fallback height");
         characterController.enabled = false;
-        transform.position = new Vector3(transform.position.x, hit.point.y + groundClampOffset, transform.position.z);
+        transform.position = new Vector3(pos.x, 3f, pos.z);
         characterController.enabled = true;
         velocity.y = -2f;
-        grounded = true;
-        jumping = false;
     }
 
     private bool ProbeGround(out RaycastHit hit)

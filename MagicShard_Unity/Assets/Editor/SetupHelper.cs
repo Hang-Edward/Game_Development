@@ -139,9 +139,19 @@ public class SetupHelper : EditorWindow
             if (terrain.GetComponent<TerrainCollisionBuilder>() == null)
                 terrain.AddComponent<TerrainCollisionBuilder>();
 
-            // TerrainCollisionBuilder handles all MeshCollider setup via OnEnable
+            // Safety ground plane (hidden, below terrain, prevents falling through)
+            var safety = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            safety.name = "SafetyGround";
+            safety.transform.SetParent(terrain.transform);
+            safety.transform.position = new Vector3(0, -50, 0);
+            safety.transform.localScale = new Vector3(2000, 1, 2000);
+            var mr = safety.GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = false;
+            var sc = safety.GetComponent<MeshCollider>();
+            if (sc != null) sc.sharedMesh = safety.GetComponent<MeshFilter>().sharedMesh;
+
             Undo.RegisterCreatedObjectUndo(terrain, "Create Terrain");
-            Debug.Log("Terrain placed");
+            Debug.Log("Terrain placed with safety ground");
         }
         else
             Debug.LogWarning("map_01_forest.fbx not found.");

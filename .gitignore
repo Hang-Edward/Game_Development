@@ -1,9 +1,23 @@
 # IDE
 .vscode/
 .idea/
+.vs/
 *.swp
 *.swo
 *~
+
+# Operating system
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*_backup.*
 
 # Python
 .venv/
@@ -11,30 +25,50 @@ __pycache__/
 *.pyc
 *.pyo
 
-# 系统
-.DS_Store
-Thumbs.db
-*.log
-*.tmp
+# CMake / native C++ generated output
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
 
-# 备份文件
-*_backup.glb
-*_backup.*
-*.bak
-
-# Unity 项目
+# Unity generated files kept out while the old project remains in the repo
 MagicShard_Unity/Library/
 MagicShard_Unity/Temp/
 MagicShard_Unity/obj/
+MagicShard_Unity/Build/
+MagicShard_Unity/Builds/
+MagicShard_Unity/Logs/
+MagicShard_Unity/MemoryCaptures/
+MagicShard_Unity/UserSettings/
 MagicShard_Unity/*.csproj
 MagicShard_Unity/*.sln
 MagicShard_Unity/*.userprefs
-MagicShard_Unity/Build/
-MagicShard_Unity/Builds/
-MagicShard_Unity/.idea/
-MagicShard_Unity/sysinfo.txt
-MagicShard_Unity/Logs/
-MagicShard_Unity/MemoryCaptures/
-MagicShard_Unity/Assets/UI/Fonts/*.asset
 MagicShard_Unity/*.log
+MagicShard_Unity/sysinfo.txt
 MagicShard_Unity/crashlytics-build.properties
+
+# Unreal generated files
+MagicShard_Unreal/.vs/
+MagicShard_Unreal/Binaries/
+MagicShard_Unreal/DerivedDataCache/
+MagicShard_Unreal/Intermediate/
+MagicShard_Unreal/Saved/
+MagicShard_Unreal/.vsconfig
+MagicShard_Unreal/*.sln
+MagicShard_Unreal/*.suo
+MagicShard_Unreal/*.opensdf
+MagicShard_Unreal/*.sdf
+MagicShard_Unreal/*.VC.db
+MagicShard_Unreal/*.VC.opendb
+
+# Unreal local user settings
+MagicShard_Unreal/Config/DefaultEditorPerProjectUserSettings.ini
+MagicShard_Unreal/Config/DefaultEditor.ini
+MagicShard_Unreal/Config/User*.ini

@@ -1,0 +1,27 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.7",
+  "Category": "Games",
+  "Description": "MagicShard Unreal C++ rebuild focused on OOP, UI, character control, and random-access file processing.",
+  "Modules": [
+    {
+      "Name": "MagicShard",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "EnhancedInput",
+      "Enabled": true
+    },
+    {
+      "Name": "NNEDenoiser",
+      "Enabled": false
+    },
+    {
+      "Name": "NNERuntimeORT",
+      "Enabled": false
+    }
+  ]
+}
