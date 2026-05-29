@@ -1,34 +1,43 @@
 # 魔法碎片：暗蚀纪元
 
-Unity 2022.3 LTS 3D 开放世界冒险游戏（C#）。
+3D 开放世界冒险游戏 — Unreal Engine 5.7 (C++)。
 
 ## 环境要求
 
-| 工具 | 版本要求 |
-|------|---------|
-| Unity | 2022.3 LTS+ |
-| Git | 任意版本 |
+| 工具 | 版本 |
+|------|------|
+| Unreal Engine | 5.7 |
+| Python | 3.x (UE 内置) |
+| Git (LFS) | 任意版本 |
 
-## 构建与运行
+## 快速开始
 
-### 1. 克隆仓库
+### 克隆仓库
 
 ```bash
-git clone https://github.com/你的用户名/项目名.git
-cd 项目目录
+git lfs install
+git clone <仓库地址>
+cd Game_Development
 ```
 
-### 2. 打开 Unity 项目
+### 一键构建
 
-1. 启动 Unity Hub
-2. 点击 "添加" → 选择 `MagicShard_Unity/` 目录
-3. Unity 会自动下载依赖 Package（Cinemachine、Input System、TextMeshPro 等）
+```powershell
+cd MagicShard_Unreal
+.\Scripts\Run-ReimportAndRebuild.ps1   # 导入资产+碰撞+场景
+```
 
-### 3. 一键搭建场景
+### 运行
 
-菜单栏 → **Tools → MagicShard → Setup Project**（配置动画 + 项目设置）
+```powershell
+.\map1.exe   # 第一章（银风森林）
+```
 
-菜单栏 → **Tools → MagicShard → Build Scene**（自动搭建完整场景）
+### 构建（C++ 编译）
+
+```powershell
+.\Scripts\Build-Unreal.ps1
+```
 
 ## 操作说明
 
@@ -44,36 +53,33 @@ cd 项目目录
 | 格挡 | 右键 |
 | 释放鼠标 | ESC |
 
-## Unity 项目结构
+## 项目结构
 
 ```
-MagicShard_Unity/
-├── Assets/
-│   ├── Scripts/                    # C# 游戏脚本
-│   │   ├── PlayerController.cs     # 移动/物理/输入
-│   │   ├── CameraController.cs     # 第三人称轨道相机
-│   │   ├── CombatSystem.cs         # 攻击系统
-│   │   ├── UIManager.cs            # HUD
-│   │   ├── GameManager.cs          # 游戏初始化
-│   │   ├── TerrainCollisionBuilder.cs  # 地形碰撞
-│   │   └── CharacterMaterialApplier.cs # 角色材质
-│   ├── Editor/                     # Editor 工具
-│   │   ├── SetupHelper.cs          # 一键搭建场景
-│   │   └── SceneVerifier.cs        # 场景检查
-│   ├── Settings/
-│   │   └── GameInput.inputactions  # 输入绑定
-│   ├── Animations/Controllers/     # Animator Controller
-│   ├── Models/                     # FBX 模型文件
-│   ├── Scenes/                     # Unity 场景
-│   └── UI/Fonts/                   # 字体
-├── Packages/manifest.json          # 包依赖
-└── ProjectSettings/                # Unity 项目设置
+MagicShard_Unreal/
+├── Source/MagicShard/          # C++ 游戏模块
+│   ├── Public/                 # 头文件
+│   └── Private/                # 实现文件
+├── Content/                    # UE 资产（.uasset/.umap）
+│   └── Imported/               # 导入的 FBX 资产
+├── Scripts/                    # 构建/导入脚本
+│   ├── Build-Unreal.ps1         # 编译 C++ 项目
+│   ├── Build-Launcher.ps1       # 生成 map#.exe
+│   ├── ImportLegacyAssets.py    # 导入 Unity 项目的 FBX
+│   ├── SetupImportedWorld.py    # 重建关卡场景
+│   └── FixMapCollision.py       # 修复地形碰撞
+├── Config/                     # 项目配置
+└── MagicShard_Unreal.uproject  # UE 项目文件
 ```
 
 ## 资产
 
-原始 GLB 模型位于 `assets/models/`，用 Blender 转换为 FBX 后放入 Unity 项目：
+原始 GLB 模型位于 `assets/models/`，通过 Blender 转换为 FBX：
 - `assets/models/map_01_forest.glb` (304MB, Git LFS)
-- `assets/models/character/` (stand.walk.run.glb → .fbx)
+- `assets/models/character/{stand,walk,run}.glb`
 - `assets/models/boss_spider/` (idle, walk, attack)
 - `assets/models/boss3/` (static, move, attack1-3, defense, die, stepback)
+
+## 参考项目
+
+`MagicShard_Unity/` — Unity 2022.3 LTS 原型（C#），用于早期验证和资产测试。

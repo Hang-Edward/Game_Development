@@ -4,130 +4,92 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-**魔法碎片：暗蚀纪元** — Unity 2022.3 LTS 3D 开放世界冒险游戏。
+**魔法碎片：暗蚀纪元** — 3D 开放世界冒险游戏。
 
-Unity 项目位于 `MagicShard_Unity/`，GLB 模型文件位于 `assets/models/`。
+- **主要引擎**: Unreal Engine 5.7 (C++) — `MagicShard_Unreal/`
+- **参考项目**: Unity 2022.3 LTS (C#) — `MagicShard_Unity/`
+- **资产**: GLB 模型文件位于 `assets/models/`
 
-## 构建与运行
+## Unreal Engine 项目
 
-```bash
-# 使用 Unity Hub 打开 Unity 项目
-# 1. 启动 Unity Hub
-# 2. 添加项目 -> MagicShard_Unity/
-# 3. 菜单栏 Tools -> MagicShard -> Setup Project (首次/动画更新后运行)
-# 4. 菜单栏 Tools -> MagicShard -> Build Scene (一键搭建场景)
-# 5. 点击 Play 按钮运行
-# 6. 菜单栏 Tools -> MagicShard -> Verify Scene (检查场景配置)
+### 构建与运行
+
+```powershell
+# 构建
+.\Scripts\Build-Unreal.ps1
+
+# 一键重建全部（导入资产 + 碰撞 + 场景）
+.\Scripts\Run-ReimportAndRebuild.ps1
+
+# 或单独运行
+.\Scripts\ImportLegacyAssets.py    # 导入 FBX 资产
+.\Scripts\FixMapCollision.py       # 修复地图碰撞
+.\Scripts\SetupImportedWorld.py    # 重建关卡场景
+
+# 运行
+.\map1.exe
 ```
 
-## 项目结构
+### 核心 C++ 模块
 
-| 目录 | 用途 |
+| 类 | 功能 |
 |------|------|
-| `Assets/Scripts/` | C# 游戏脚本 |
-| `Assets/Editor/` | Editor 工具脚本 |
-| `Assets/Animations/Controllers/` | Animator Controller |
-| `Assets/Models/Character/` | 角色 FBX 模型 (stand/walk/run) |
-| `Assets/Models/Map/` | 地图 FBX 模型 |
-| `Assets/Scenes/` | Unity 场景文件 (GameWorld.unity) |
-| `Assets/Settings/` | Input System 绑定配置 |
-| `Assets/UI/Fonts/` | 字体资产 |
-| `Assets/Prefabs/` | 预制体 |
-| `assets/models/` | 原始 GLB 模型文件（需复制到 Unity 项目） |
+| `MagicShard` | 模块入口 |
+| `MagicShardPlayerCharacter` | 玩家角色（输入、移动、物理） |
+| `MagicShardPlayerController` | 玩家控制器（相机、UI 交互） |
+| `MagicShardGameMode` | 游戏模式（规则、HUD 创建） |
+| `MagicShardBaseCharacter` | 角色基类 |
+| `MagicShardCombatComponent` | 战斗组件 |
+| `MagicShardHUD` / `MagicShardHUDWidget` | UI/HUD |
+| `MagicShardEntity` | 实体系统 |
+| `MagicShardInventoryComponent` | 背包 |
+| `MagicShardSaveSubsystem` | 存档 |
+| `MagicShardShardPickup` | 可拾取碎片 |
 
-## 核心脚本
+### 构建脚本
 
-| 脚本 | 功能 |
+| 脚本 | 用途 |
 |------|------|
-| `PlayerController.cs` | 玩家移动、物理、输入处理。直接读取 `Keyboard.current`/`Mouse.current`。包含地面吸附（SnapToGround）、Coyote Time、跳跃等机制 |
-| `CameraController.cs` | 第三人称轨道相机。直接读取鼠标输入，不依赖 PlayerInput 组件 |
-| `CombatSystem.cs` | 攻击检测与冷却 |
-| `UIManager.cs` | HUD 和 UI 管理 |
-| `GameManager.cs` | 游戏初始化 |
-| `TerrainCollisionBuilder.cs` | 运行时自动为地形网格添加 MeshCollider。挂载在 Terrain 对象上，OnEnable 时触发 |
-| `CharacterMaterialApplier.cs` | 角色材质管理 |
-| `SetupHelper.cs` (Editor) | 一键搭建场景 + 材质升级 + 项目配置 |
-| `SceneVerifier.cs` (Editor) | 场景完整性检查 |
-| `CharacterAnimationRepairer.cs` (Editor) | 修复 Animator Controller 动画绑定 |
-| `CharacterGroundingCalibrator.cs` (Editor) | 校准角色地面接触参数 |
-| `CharacterMaterialPostprocessor.cs` (Editor) | 角色材质导入后处理 |
-| `CharacterMaterialRepairer.cs` (Editor) | 修复角色材质资产 |
-| `CharacterMaterialTools.cs` (Editor) | 应用角色材质到模型 |
-| `TerrainCollisionTools.cs` (Editor) | 修复地形碰撞器 |
+| `Scripts/Build-Unreal.ps1` | 编译 C++ 项目 |
+| `Scripts/Build-Launcher.ps1` | 生成 `map1.exe` |
+| `Scripts/Launch-Editor.ps1` | 启动 UE Editor |
+| `Scripts/ImportLegacyAssets.py` | 从 Unity 项目导入 FBX 资产（角色+地图） |
+| `Scripts/FixMapCollision.py` | 修复地图 StaticMesh 碰撞（设置 CTF_USE_COMPLEX_AS_SIMPLE） |
+| `Scripts/SetupImportedWorld.py` | 一键重建关卡（放置地形+光照+PlayerStart） |
+| `Scripts/ReimportMapAndRebuildWorld.py` | 导入+碰撞+场景完整流程 |
+| `Scripts/Run-ReimportAndRebuild.ps1` | 上述流程的 PowerShell 封装 |
+| `Scripts/Run-RuntimeSmoke.ps1` | 运行时烟雾测试 |
 
-## 输入系统
+### 地图碰撞设置（重要）
 
-所有输入直接在脚本中通过 `Keyboard.current` 和 `Mouse.current` 读取（不使用 PlayerInput 事件模式）。PlayerInput 组件仅用于暴露 InputActionAsset 给编辑器。
+UE5.7 中启用地形碰撞的正确 API：
 
-| 操作 | 键位 | 代码 |
-|------|------|------|
-| Move | WASD | `kb.wKey.isPressed` |
-| Look | 鼠标移动 | `Mouse.current.delta.ReadValue()` |
-| Sprint | Shift | `kb.leftShiftKey.isPressed` |
-| Crouch | Ctrl | `kb.leftCtrlKey.isPressed` |
-| Jump | Space | `kb.spaceKey.wasPressedThisFrame` |
-| Attack | 鼠标左键 | `Mouse.current.leftButton.wasPressedThisFrame` |
-| Block | 鼠标右键 | `Mouse.current.rightButton.isPressed` |
-| Zoom | 滚轮 | `Mouse.current.scroll.ReadValue()` |
-| ToggleCursor | ESC | `kb.escapeKey.wasPressedThisFrame` |
-
-## PlayerController 架构
-
-PlayerController 管理角色移动、物理和输入，核心机制：
-
-- **地面检测**: CharacterController.isGrounded + 球形射线探测（SphereCast）双重验证
-- **地面吸附** (`SnapToGround`): 在 Start 时从 Y+5 向下射线检测，将角色吸附到地形表面
-- **Coyote Time** (`coyoteTime` = 0.12s): 离开地面后短暂时间内仍可跳跃
-- **跳跃忽略** (`jumpGroundIgnoreTime` = 0.18s): 起跳后短暂忽略地面碰撞，防止起跳瞬间被地面拉回
-- **模型锁定** (`LateUpdate`): 每帧将动画模型子对象的位置/旋转锁定到初始值，防止根运动干扰
-- **视觉抬高** (`walkVisualLift`/`runVisualLift`): 根据移动速度抬高模型位置防止脚部穿模，平滑过渡
-- **地面黏附** (`StickToGround`): 每帧探测地面高度差，将角色吸附到地形表面跟随起伏
-
-## 角色动画管线
-
-```
-角色 FBX 文件 (stand/walk/run)
-  → Unity ModelImporter (Humanoid Rig)
-    → 提取 Animation Clip (Idle/Walk/Run)
-      → Animator Controller (CharacterAnimator.controller)
-        → Blend Tree: Speed 参数控制 idle/walk/run 混合
-          → GPU 蒙皮（Unity 自动处理）
+```python
+mesh = unreal.load_asset("/Game/Imported/Map/map_01_forest.map_01_forest")
+body_setup = mesh.get_editor_property("body_setup")
+body_setup.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
 ```
 
-Blend Tree 阈值: Idle=0, Walk=3, Run=6。Speed 参数由 `PlayerController.GetLocomotionBlend()` 根据当前速度计算。注意 Sprint 动画仅在 `hasMoveInput && !crouching && !blocking` 时激活（即冲刺时需要有移动输入且非蹲下/格挡状态）。
+**注意**: `complex_collision_as_simple` 不是 StaticMesh 的直属性，在 BodySetup 上操作。
 
-## 地形碰撞系统
+## Unity 项目（参考）
 
-- **SetupHelper.CreateTerrain()**: 在场景中实例化地形 FBX，挂载 TerrainCollisionBuilder 组件
-- **TerrainCollisionBuilder**: `[ExecuteAlways]` 组件，OnEnable 时遍历所有子 MeshFilter，为每个网格添加 MeshCollider（过滤条件: bounds > 0.01f 以排除极小物体）
-- **回退机制**: PlayerController.Start() 中调用 `TerrainCollisionBuilder.EnsureSceneTerrainColliders()` 确保碰撞存在
+Unity 项目位于 `MagicShard_Unity/`，用于原型验证和资产测试。
 
-## Editor 工具 (菜单栏 Tools → MagicShard)
+### 操作方式
 
-| 菜单项 | 快捷键 | 功能 |
-|--------|--------|------|
-| Setup Project | Ctrl+Shift+S | 更新 Animator Controller 动画绑定 + 输入/项目设置 |
-| Build Scene | Ctrl+Shift+B | 一键重建完整场景（Player + 相机 + 地形 + UI + 材质升级） |
-| Verify Scene | - | 检查场景完整性（Player、Camera、Terrain、UI、材质） |
-| Repair Character Animator | - | 修复 Animator Controller 动画绑定问题 |
-| Calibrate Character Grounding | - | 校准角色与地面的接触参数 |
-| Apply Character Materials | - | 应用角色材质到模型 |
-| Repair Character Material Assets | - | 修复角色材质资产问题 |
-| Repair Terrain Colliders | - | 修复地形碰撞器 |
-
-## 材质管线
-
-- GLB → Blender → FBX 导出（带嵌入式纹理）
-- Unity 导入后通过 `UpgradeMaterials()` 将 Standard Shader 材质属性映射到 URP/Lit
-- 映射表: `_MainTex→_BaseMap`, `_Color→_BaseColor`, `_BumpMap→_BumpMap`, `_Glossiness→_Smoothness`, `_Metallic→_Metallic`
+菜单栏 `Tools → MagicShard`：
+- `Setup Project` (Ctrl+Shift+S) — 更新动画绑定+项目配置
+- `Build Scene` (Ctrl+Shift+B) — 一键搭建场景
+- `Verify Scene` — 场景完整性检查
 
 ## 资产
 
-原始 GLB 模型位于 `assets/models/`，需复制到 `MagicShard_Unity/Assets/Models/`：
-- `assets/models/map_01_forest.glb` (304MB, Git LFS)
-- `assets/models/character/stand/walk/run.glb`（已转换为 FBX 放入 Unity 项目）
-- `assets/models/boss_spider/` (idle, walk, attack)
-- `assets/models/boss3/` (static, move, attack1-3, defense, die, stepback)
+原始 GLB 模型位于 `assets/models/`，通过 Blender 转换为 FBX：
+- `map_01_forest.glb` (304MB, Git LFS) — 第一章地图
+- `character/{stand,walk,run}.glb` — 主角模型（已转为 FBX）
+- `boss_spider/` — BOSS1
+- `boss3/` — BOSS3
 
 ## 版本规则
 
