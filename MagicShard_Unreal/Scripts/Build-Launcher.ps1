@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 $SourceFile = Join-Path $ProjectDir "Launcher\map1_launcher.cpp"
-$OutputFile = Join-Path $ProjectDir "map1.exe"
+$OutputFile = Join-Path $ProjectDir "main.exe"
 
 if (-not (Test-Path -LiteralPath $SourceFile)) {
     throw "Launcher source was not found: $SourceFile"

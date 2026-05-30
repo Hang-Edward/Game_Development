@@ -187,6 +187,7 @@ void AMagicShardPlayerCharacter::UpdateVisualAnimation()
 
     if (NextAnimation != nullptr)
     {
+
         MeshComp->SetAnimation(NextAnimation);
         MeshComp->Play(true);
         LastVisualActionState = ActionState;
