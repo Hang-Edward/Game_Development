@@ -4,9 +4,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "MagicShardGameMode.generated.h"
 
-/**
- * 游戏模式类，集中指定默认 Pawn、Controller 和 HUD。
- */
 UCLASS()
 class MAGICSHARD_API AMagicShardGameMode : public AGameModeBase
 {
@@ -16,4 +13,7 @@ public:
     AMagicShardGameMode();
 
     virtual void BeginPlay() override;
+
+private:
+    void ApplyMapTextures();
 };
