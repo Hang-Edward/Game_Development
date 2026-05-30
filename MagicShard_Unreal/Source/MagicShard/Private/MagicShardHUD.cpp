@@ -42,7 +42,7 @@ FString AMagicShardHUD::BuildFallbackHudText() const
     const FMagicShardRuntimeStatus Status = Character->BuildRuntimeStatus();
     const FString StateName = StaticEnum<EMagicShardActionState>()->GetNameStringByValue(static_cast<int64>(Status.ActionState));
     return FString::Printf(
-        TEXT("[WASD] Move  [Shift] Sprint  [Space] Jump  [RMB] Block  [Wheel] Zoom  [F5/F6/F7] Save/Load/Update\nHP %.0f  MP %.0f  Speed %.0f  State %s"),
+        TEXT("[WASD] Move  [Shift] Sprint  [Space] Jump  [Wheel] Zoom\nHP %.0f  MP %.0f  Speed %.0f  State %s"),
         Status.Health,
         Status.Mana,
         Status.Speed,

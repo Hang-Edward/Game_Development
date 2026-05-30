@@ -9,9 +9,7 @@ AMagicShardBaseCharacter::AMagicShardBaseCharacter()
       Mana(80.0f),
       WalkSpeed(450.0f),
       SprintSpeed(750.0f),
-      BlockSpeed(180.0f),
       ActionState(EMagicShardActionState::Idle),
-      bBlocking(false),
       bSprinting(false)
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -44,47 +42,9 @@ void AMagicShardBaseCharacter::Tick(float DeltaSeconds)
     UpdateActionState(DeltaSeconds);
 }
 
-void AMagicShardBaseCharacter::StartPrimaryAction()
-{
-    ActionState = EMagicShardActionState::Attack;
-}
-
-void AMagicShardBaseCharacter::StopPrimaryAction()
-{
-    if (ActionState == EMagicShardActionState::Attack)
-    {
-        ActionState = EMagicShardActionState::Idle;
-    }
-}
-
-void AMagicShardBaseCharacter::StartBlock()
-{
-    bBlocking = true;
-    ActionState = EMagicShardActionState::Block;
-    UpdateMovementSpeed();
-}
-
-void AMagicShardBaseCharacter::StopBlock()
-{
-    bBlocking = false;
-    UpdateMovementSpeed();
-}
-
 void AMagicShardBaseCharacter::AddShard(int32 Count)
 {
-    // 基类不保存碎片数量，派生类可以重写。
     (void)Count;
-}
-
-void AMagicShardBaseCharacter::ReceiveDamage(float DamageAmount)
-{
-    if (DamageAmount <= 0.0f)
-    {
-        return;
-    }
-
-    const float FinalDamage = bBlocking ? DamageAmount * 0.35f : DamageAmount;
-    Health = FMath::Clamp(Health - FinalDamage, 0.0f, MaxHealth);
 }
 
 FMagicShardRuntimeStatus AMagicShardBaseCharacter::BuildRuntimeStatus() const
@@ -121,58 +81,27 @@ void AMagicShardBaseCharacter::UpdateMovementSpeed()
         return;
     }
 
-    if (bBlocking)
-    {
-        MoveComp->MaxWalkSpeed = BlockSpeed;
-    }
-    else if (bSprinting)
-    {
-        MoveComp->MaxWalkSpeed = SprintSpeed;
-    }
-    else
-    {
-        MoveComp->MaxWalkSpeed = WalkSpeed;
-    }
+    MoveComp->MaxWalkSpeed = bSprinting ? SprintSpeed : WalkSpeed;
 }
 
 void AMagicShardBaseCharacter::UpdateActionState(float DeltaSeconds)
 {
     (void)DeltaSeconds;
 
-    if (bBlocking || ActionState == EMagicShardActionState::Attack)
-    {
-        return;
-    }
-
-    const bool bGrounded = GetCharacterMovement() != nullptr && GetCharacterMovement()->IsMovingOnGround();
-    if (!bGrounded)
-    {
-        EMagicShardActionState OldState = ActionState;
-        ActionState = EMagicShardActionState::Jump;
-        if (OldState != ActionState)
-            UE_LOG(LogTemp, Display, TEXT("[AnimDebug] ActionState -> Jump (not grounded)"));
-        return;
-    }
-
+    // 不论是否在地面，都按水平速度决定动作状态。
+    // 这样在空中时角色会保持起跳前的动作（走/跑/待机），
+    // 空中改变方向或速度时也能平滑过渡。
     const float HorizontalSpeed = GetVelocity().Size2D();
-    EMagicShardActionState NewState;
     if (HorizontalSpeed < 5.0f)
     {
-        NewState = EMagicShardActionState::Idle;
+        ActionState = EMagicShardActionState::Idle;
     }
     else if (bSprinting)
     {
-        NewState = EMagicShardActionState::Run;
+        ActionState = EMagicShardActionState::Run;
     }
     else
     {
-        NewState = EMagicShardActionState::Walk;
-    }
-
-    if (NewState != ActionState)
-    {
-        UE_LOG(LogTemp, Display, TEXT("[AnimDebug] ActionState %d -> %d (Speed=%.1f Sprint=%d Grounded=%d)"),
-            (int32)ActionState, (int32)NewState, HorizontalSpeed, (int32)bSprinting, (int32)bGrounded);
-        ActionState = NewState;
+        ActionState = EMagicShardActionState::Walk;
     }
 }

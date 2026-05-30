@@ -356,3 +356,35 @@ cd build
 #### 注意事项
 - BlendSpace 和 AnimBlueprint 的 AnimGraph 设置需在 Unreal Editor 中手动完成（约 2 分钟，详见脚本输出提示）
 - 构建 C++ 项目后才能看到 AnimBlueprint 的父类选项
+
+---
+
+### v0.7 — 精简代码，移除无关功能
+
+#### 背景
+攻击、格挡、背包、存档等功能的实现干扰了核心开发流程。将其全部移除，保留纯粹的角色移动+动画系统，后续需要时再重写。
+
+#### 删除的文件（14 个）
+- `MagicShardCombatComponent.h/.cpp` — 攻击系统
+- `MagicShardInventoryComponent.h/.cpp` — 背包系统
+- `MagicShardSaveSubsystem.h/.cpp` — 存档子系统
+- `RandomAccessSaveFile.h/.cpp` — 随机文件读写
+- `MagicShardEnemyCharacter.h/.cpp` — 敌人角色
+- `MagicShardCourseVerifier.h/.cpp` — 课程合规检查工具
+- `MagicShardPrototypeWorldBuilder.h/.cpp` — 原型场景生成器
+
+#### 修改的文件
+- `MagicShardTypes.h` — 移除 `Attack`、`Block` 枚举值
+- `MagicShardBaseCharacter.h/.cpp` — 移除 `StartPrimaryAction`、`StopPrimaryAction`、`StartBlock`、`StopBlock`、`ReceiveDamage`、`BlockSpeed`、`bBlocking`
+- `MagicShardPlayerCharacter.h/.cpp` — 移除 `BuildSaveRecord`、`ApplySaveRecord`、战斗和背包组件创建、格挡检查
+- `MagicShardPlayerController.h/.cpp` — 移除攻击/格挡/存档按键绑定和对应方法
+- `MagicShardHUD.cpp` — 更新操作提示文字
+- `Config/DefaultInput.ini` — 移除 `Attack`、`Block`、`SaveSlot`、`LoadSlot`、`UpdateSlot` 绑定
+
+#### 保留的功能
+- WASD 移动、Shift 冲刺、Space 跳跃
+- 第三人称相机 + 滚轮缩放
+- Idle/Walk/Run 动画切换
+- HUD 状态显示（HP/MP/速度/状态）
+- 实体系统（HeroEntity 管理 HP/MP/碎片）
+- 魔法碎片拾取物（ShardPickup）

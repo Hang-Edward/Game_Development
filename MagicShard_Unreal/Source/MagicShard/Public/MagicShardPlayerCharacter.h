@@ -34,12 +34,6 @@ public:
     void RequestJump();
     void StopJumpRequest();
 
-    FMagicShardPlayerRecord BuildSaveRecord(int32 SlotIndex) const;
-    void ApplySaveRecord(const FMagicShardPlayerRecord& Record);
-
-    UFUNCTION(BlueprintCallable, Category = "MagicShard|Player")
-    int32 GetCollectedShards() const;
-
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MagicShard|Camera")
     USpringArmComponent* CameraBoom;

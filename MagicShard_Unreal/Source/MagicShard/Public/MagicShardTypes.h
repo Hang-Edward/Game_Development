@@ -13,10 +13,7 @@ enum class EMagicShardActionState : uint8
 {
     Idle UMETA(DisplayName = "Idle"),
     Walk UMETA(DisplayName = "Walk"),
-    Run UMETA(DisplayName = "Run"),
-    Jump UMETA(DisplayName = "Jump"),
-    Attack UMETA(DisplayName = "Attack"),
-    Block UMETA(DisplayName = "Block")
+    Run UMETA(DisplayName = "Run")
 };
 
 /**

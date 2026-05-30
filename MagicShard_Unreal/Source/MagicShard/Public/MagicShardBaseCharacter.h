@@ -30,12 +30,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void BeginPlay() override;
 
-    virtual void StartPrimaryAction();
-    virtual void StopPrimaryAction();
-    virtual void StartBlock();
-    virtual void StopBlock();
     virtual void AddShard(int32 Count);
-    virtual void ReceiveDamage(float DamageAmount);
     virtual FMagicShardRuntimeStatus BuildRuntimeStatus() const;
 
     UFUNCTION(BlueprintCallable, Category = "MagicShard|Character")
@@ -66,14 +61,8 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MagicShard|Movement")
     float SprintSpeed;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MagicShard|Movement")
-    float BlockSpeed;
-
     UPROPERTY(BlueprintReadOnly, Category = "MagicShard|State")
     EMagicShardActionState ActionState;
-
-    UPROPERTY(BlueprintReadOnly, Category = "MagicShard|State")
-    bool bBlocking;
 
     UPROPERTY(BlueprintReadOnly, Category = "MagicShard|State")
     bool bSprinting;

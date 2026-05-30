@@ -6,11 +6,6 @@
 
 class AMagicShardPlayerCharacter;
 
-/**
- * 玩家输入控制器。
- * 课程视角下它展示了对象之间的协作：Controller 读取输入，
- * Character 负责移动、跳跃、格挡和镜头缩放。
- */
 UCLASS()
 class MAGICSHARD_API AMagicShardPlayerController : public APlayerController
 {
@@ -32,12 +27,6 @@ protected:
     void StopSprint();
     void StartJump();
     void StopJump();
-    void StartAttack();
-    void StartBlock();
-    void StopBlock();
-    void SaveSlotOne();
-    void LoadSlotOne();
-    void UpdateSlotOne();
 
 private:
     FVector2D CachedMoveInput;

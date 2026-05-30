@@ -1,8 +1,6 @@
-﻿#include "MagicShardPlayerController.h"
+#include "MagicShardPlayerController.h"
 
 #include "MagicShardPlayerCharacter.h"
-#include "MagicShardCombatComponent.h"
-#include "MagicShardSaveSubsystem.h"
 
 AMagicShardPlayerController::AMagicShardPlayerController()
     : CachedMoveInput(FVector2D::ZeroVector)
@@ -24,12 +22,6 @@ void AMagicShardPlayerController::SetupInputComponent()
     InputComponent->BindAction(TEXT("Jump"), IE_Released, this, &AMagicShardPlayerController::StopJump);
     InputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &AMagicShardPlayerController::StartSprint);
     InputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AMagicShardPlayerController::StopSprint);
-    InputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &AMagicShardPlayerController::StartAttack);
-    InputComponent->BindAction(TEXT("Block"), IE_Pressed, this, &AMagicShardPlayerController::StartBlock);
-    InputComponent->BindAction(TEXT("Block"), IE_Released, this, &AMagicShardPlayerController::StopBlock);
-    InputComponent->BindAction(TEXT("SaveSlotOne"), IE_Pressed, this, &AMagicShardPlayerController::SaveSlotOne);
-    InputComponent->BindAction(TEXT("LoadSlotOne"), IE_Pressed, this, &AMagicShardPlayerController::LoadSlotOne);
-    InputComponent->BindAction(TEXT("UpdateSlotOne"), IE_Pressed, this, &AMagicShardPlayerController::UpdateSlotOne);
 }
 
 void AMagicShardPlayerController::PlayerTick(float DeltaTime)
@@ -38,23 +30,17 @@ void AMagicShardPlayerController::PlayerTick(float DeltaTime)
 
     if (AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter())
     {
-        if (!CachedMoveInput.IsNearlyZero())
-            UE_LOG(LogTemp, Display, TEXT("[MoveDebug] PlayerTick move=(%.2f, %.2f)"), CachedMoveInput.X, CachedMoveInput.Y);
         PlayerCharacter->MoveByInput(CachedMoveInput);
     }
 }
 
 void AMagicShardPlayerController::MoveForward(float Value)
 {
-    if (Value != 0.0f)
-        UE_LOG(LogTemp, Display, TEXT("[MoveDebug] MoveForward=%.2f"), Value);
     CachedMoveInput.Y = Value;
 }
 
 void AMagicShardPlayerController::MoveRight(float Value)
 {
-    if (Value != 0.0f)
-        UE_LOG(LogTemp, Display, TEXT("[MoveDebug] MoveRight=%.2f"), Value);
     CachedMoveInput.X = Value;
 }
 
@@ -111,82 +97,6 @@ void AMagicShardPlayerController::StopJump()
     if (AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter())
     {
         PlayerCharacter->StopJumpRequest();
-    }
-}
-
-void AMagicShardPlayerController::StartAttack()
-{
-    if (AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter())
-    {
-        if (UMagicShardCombatComponent* CombatComponent = PlayerCharacter->FindComponentByClass<UMagicShardCombatComponent>())
-        {
-            CombatComponent->TryMeleeAttack();
-        }
-    }
-}
-
-void AMagicShardPlayerController::StartBlock()
-{
-    if (AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter())
-    {
-        PlayerCharacter->StartBlock();
-    }
-}
-
-void AMagicShardPlayerController::StopBlock()
-{
-    if (AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter())
-    {
-        PlayerCharacter->StopBlock();
-    }
-}
-
-void AMagicShardPlayerController::SaveSlotOne()
-{
-    UGameInstance* GameInstance = GetGameInstance();
-    AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter();
-    if (GameInstance == nullptr || PlayerCharacter == nullptr)
-    {
-        return;
-    }
-
-    if (UMagicShardSaveSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UMagicShardSaveSubsystem>())
-    {
-        SaveSubsystem->SavePlayerRecord(1, PlayerCharacter->BuildSaveRecord(1));
-    }
-}
-
-void AMagicShardPlayerController::LoadSlotOne()
-{
-    UGameInstance* GameInstance = GetGameInstance();
-    AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter();
-    if (GameInstance == nullptr || PlayerCharacter == nullptr)
-    {
-        return;
-    }
-
-    if (UMagicShardSaveSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UMagicShardSaveSubsystem>())
-    {
-        FMagicShardPlayerRecord Record;
-        if (SaveSubsystem->LoadPlayerRecord(1, Record))
-        {
-            PlayerCharacter->ApplySaveRecord(Record);
-        }
-    }
-}
-
-void AMagicShardPlayerController::UpdateSlotOne()
-{
-    UGameInstance* GameInstance = GetGameInstance();
-    AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter();
-    if (GameInstance == nullptr || PlayerCharacter == nullptr)
-    {
-        return;
-    }
-
-    if (UMagicShardSaveSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UMagicShardSaveSubsystem>())
-    {
-        SaveSubsystem->UpdatePlayerRecord(1, PlayerCharacter->BuildSaveRecord(1));
     }
 }
 
