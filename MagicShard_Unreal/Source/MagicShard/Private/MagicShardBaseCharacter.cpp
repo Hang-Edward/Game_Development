@@ -147,21 +147,32 @@ void AMagicShardBaseCharacter::UpdateActionState(float DeltaSeconds)
     const bool bGrounded = GetCharacterMovement() != nullptr && GetCharacterMovement()->IsMovingOnGround();
     if (!bGrounded)
     {
+        EMagicShardActionState OldState = ActionState;
         ActionState = EMagicShardActionState::Jump;
+        if (OldState != ActionState)
+            UE_LOG(LogTemp, Display, TEXT("[AnimDebug] ActionState -> Jump (not grounded)"));
         return;
     }
 
     const float HorizontalSpeed = GetVelocity().Size2D();
+    EMagicShardActionState NewState;
     if (HorizontalSpeed < 5.0f)
     {
-        ActionState = EMagicShardActionState::Idle;
+        NewState = EMagicShardActionState::Idle;
     }
     else if (bSprinting)
     {
-        ActionState = EMagicShardActionState::Run;
+        NewState = EMagicShardActionState::Run;
     }
     else
     {
-        ActionState = EMagicShardActionState::Walk;
+        NewState = EMagicShardActionState::Walk;
+    }
+
+    if (NewState != ActionState)
+    {
+        UE_LOG(LogTemp, Display, TEXT("[AnimDebug] ActionState %d -> %d (Speed=%.1f Sprint=%d Grounded=%d)"),
+            (int32)ActionState, (int32)NewState, HorizontalSpeed, (int32)bSprinting, (int32)bGrounded);
+        ActionState = NewState;
     }
 }

@@ -1,6 +1,7 @@
 #include "MagicShardPlayerCharacter.h"
 
 #include "Camera/CameraComponent.h"
+#include "Animation/AnimInstance.h"
 #include "Animation/AnimationAsset.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -79,10 +80,16 @@ void AMagicShardPlayerCharacter::AddShard(int32 Count)
 
 void AMagicShardPlayerCharacter::MoveByInput(const FVector2D& MoveValue)
 {
-    if (Controller == nullptr || MoveValue.IsNearlyZero())
+    if (Controller == nullptr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[MoveDebug] MoveByInput blocked: Controller=nullptr"));
+        return;
+    }
+    if (MoveValue.IsNearlyZero())
     {
         return;
     }
+    UE_LOG(LogTemp, Display, TEXT("[MoveDebug] MoveByInput proceeding: val=(%.2f,%.2f)"), MoveValue.X, MoveValue.Y);
 
     const FRotator YawRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
     const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -189,10 +196,26 @@ void AMagicShardPlayerCharacter::ConfigureImportedVisuals()
         return;
     }
 
+    // 加载角色网格体和动画序列
     USkeletalMesh* CharacterMesh = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Imported/Character/stand.stand"));
     IdleAnimation = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Imported/Character/stand_Anim.stand_Anim"));
     WalkAnimation = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Imported/Character/walk_Anim.walk_Anim"));
     RunAnimation = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Imported/Character/run_Anim.run_Anim"));
+
+    UE_LOG(LogTemp, Display, TEXT("[AnimDebug] Mesh=%s Idle=%s Walk=%s Run=%s"),
+        *GetNameSafe(CharacterMesh), *GetNameSafe(IdleAnimation), *GetNameSafe(WalkAnimation), *GetNameSafe(RunAnimation));
+
+    // 如果 MS_ 前缀的动画没加载到，尝试备用名称
+    if (WalkAnimation == nullptr)
+    {
+        WalkAnimation = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Imported/Character/walk_Anim.MS_Walk"));
+        if (WalkAnimation) UE_LOG(LogTemp, Display, TEXT("[AnimDebug] Walk loaded via MS_Walk"));
+    }
+    if (RunAnimation == nullptr)
+    {
+        RunAnimation = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Imported/Character/run_Anim.MS_Run"));
+        if (RunAnimation) UE_LOG(LogTemp, Display, TEXT("[AnimDebug] Run loaded via MS_Run"));
+    }
 
     if (CharacterMesh != nullptr)
     {
@@ -201,13 +224,14 @@ void AMagicShardPlayerCharacter::ConfigureImportedVisuals()
         MeshComp->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
         MeshComp->SetRelativeScale3D(FVector(1.0f));
         MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    }
 
-    if (IdleAnimation != nullptr)
-    {
-        MeshComp->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-        MeshComp->SetAnimation(IdleAnimation);
-        MeshComp->Play(true);
+        // 使用 AnimationSingleNode 模式，通过交叉淡入淡出实现平滑动画过渡
+        if (IdleAnimation != nullptr)
+        {
+            MeshComp->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            MeshComp->SetAnimation(IdleAnimation);
+            MeshComp->Play(true);
+        }
     }
 }
 
@@ -228,6 +252,9 @@ void AMagicShardPlayerCharacter::UpdateVisualAnimation()
     {
         NextAnimation = RunAnimation != nullptr ? RunAnimation : WalkAnimation;
     }
+
+    UE_LOG(LogTemp, Display, TEXT("[AnimDebug] ActionState=%d Last=%d Speed=%.1f Next=%s"),
+        (int32)ActionState, (int32)LastVisualActionState, GetVelocity().Size2D(), *GetNameSafe(NextAnimation));
 
     if (NextAnimation != nullptr)
     {

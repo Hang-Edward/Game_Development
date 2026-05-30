@@ -332,3 +332,27 @@ cd build
 - Added a small C++ launcher source at `MagicShard_Unreal/Launcher/map1_launcher.cpp`, plus `Build-Launcher.ps1`, and built `MagicShard_Unreal/map1.exe` so the Unreal project can be opened with a short `.\map1.exe` command.
 - Imported the main character Idle/Walk/Run FBX assets and the `map_01_forest` FBX into `MagicShard_Unreal/Content/Imported`, migrated the Unity material texture assignments into Unreal material instances, and created `/Game/Maps/Map01_Forest` as the new default map.
 - Bound `AMagicShardPlayerCharacter` to the imported `stand` skeletal mesh and `stand_Anim`/`walk_Anim`/`run_Anim` animation assets, then verified `/Game/Maps/Map01_Forest` starts successfully with the runtime smoke test.
+
+---
+
+### v0.6 — 人物动画系统：BlendSpace + AnimBlueprint + C++ AnimInstance
+
+#### 背景
+之前使用 `EAnimationMode::AnimationSingleNode` + C++ 硬切换动画，导致 Idle/Walk/Run 之间过渡突兀、无混合。参照 Unity 版本中 Blend Tree (1D, Speed 参数, Idle/Walk/Run = 0.0/0.55/1.0) 的实现思路，在 UE5 中建立等效的平滑过渡系统。
+
+#### 改动文件
+- `Scripts/SetupCharacterAnimations.py` — **新增**：一键脚本，重新导入动画 FBX、设置循环+根骨锁定、创建 BS_Locomotion (BlendSpace 1D) 和 ABP_Character (Animation Blueprint) 资产
+- `Source/MagicShard/Public/MagicShardAnimInstance.h` — **新增**：C++ AnimInstance，暴露 `Speed` 参数给 BlendSpace，平滑插值处理过渡阻尼
+- `Source/MagicShard/Private/MagicShardAnimInstance.cpp` — **新增**：`NativeUpdateAnimation` 中根据角色 ActionState 计算 Speed，阻尼插值实现平滑过渡
+- `Source/MagicShard/Public/MagicShardPlayerCharacter.h` — **修改**：移除 `UAnimationAsset*` 动画引用和 `UpdateVisualAnimation()`
+- `Source/MagicShard/Private/MagicShardPlayerCharacter.cpp` — **修改**：移除 `AnimationSingleNode` 代码，改用 `SetAnimClass(ABP_Character)`
+
+#### 新增功能/修复
+- **平滑动画过渡**：BlendSpace 1D 在 Idle(0.0)↔Walk(0.55)↔Run(1.0) 之间连续混合，取代生硬切换
+- **阻尼插值**：C++ AnimInstance 以 InterpSpeed=12 对 Speed 参数做平滑阻尼（≈ Unity 的 SmoothDamp smoothTime=0.08）
+- **动画配置优化**：导入时锁定 XY 根骨位移，关闭 RootMotion（由 CharacterMovementComponent 驱动移动），开启循环播放
+- **C++ AnimInstance**：将动画逻辑从 PlayerCharacter 解耦到专用的 AnimInstance 类中，更符合 UE5 架构
+
+#### 注意事项
+- BlendSpace 和 AnimBlueprint 的 AnimGraph 设置需在 Unreal Editor 中手动完成（约 2 分钟，详见脚本输出提示）
+- 构建 C++ 项目后才能看到 AnimBlueprint 的父类选项

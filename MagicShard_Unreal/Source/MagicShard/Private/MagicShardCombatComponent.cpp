@@ -43,24 +43,29 @@ bool UMagicShardCombatComponent::TryMeleeAttack()
     }
 
     FHitResult Hit;
-    if (!FindAttackTarget(Hit))
+    bool bHit = FindAttackTarget(Hit);
+
+    if (bHit)
     {
-        return false;
+        AActor* Target = Hit.GetActor();
+        if (Target != nullptr && Target != GetOwner())
+        {
+            if (AMagicShardBaseCharacter* TargetCharacter = Cast<AMagicShardBaseCharacter>(Target))
+            {
+                TargetCharacter->ReceiveDamage(AttackDamage);
+            }
+            OnDamageApplied.Broadcast(Target, AttackDamage);
+        }
     }
 
-    AActor* Target = Hit.GetActor();
-    if (Target == nullptr || Target == GetOwner())
+    // 无论攻击是否击中，都必须结束攻击动作状态
+    // 否则 ActionState 将永远卡在 Attack，导致 UpdateActionState 失效
+    if (OwnerCharacter != nullptr)
     {
-        return false;
+        OwnerCharacter->StopPrimaryAction();
     }
 
-    if (AMagicShardBaseCharacter* TargetCharacter = Cast<AMagicShardBaseCharacter>(Target))
-    {
-        TargetCharacter->ReceiveDamage(AttackDamage);
-    }
-
-    OnDamageApplied.Broadcast(Target, AttackDamage);
-    return true;
+    return bHit;
 }
 
 bool UMagicShardCombatComponent::CanAttack() const

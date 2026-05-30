@@ -38,17 +38,23 @@ void AMagicShardPlayerController::PlayerTick(float DeltaTime)
 
     if (AMagicShardPlayerCharacter* PlayerCharacter = GetMagicShardCharacter())
     {
+        if (!CachedMoveInput.IsNearlyZero())
+            UE_LOG(LogTemp, Display, TEXT("[MoveDebug] PlayerTick move=(%.2f, %.2f)"), CachedMoveInput.X, CachedMoveInput.Y);
         PlayerCharacter->MoveByInput(CachedMoveInput);
     }
 }
 
 void AMagicShardPlayerController::MoveForward(float Value)
 {
+    if (Value != 0.0f)
+        UE_LOG(LogTemp, Display, TEXT("[MoveDebug] MoveForward=%.2f"), Value);
     CachedMoveInput.Y = Value;
 }
 
 void AMagicShardPlayerController::MoveRight(float Value)
 {
+    if (Value != 0.0f)
+        UE_LOG(LogTemp, Display, TEXT("[MoveDebug] MoveRight=%.2f"), Value);
     CachedMoveInput.X = Value;
 }
 
