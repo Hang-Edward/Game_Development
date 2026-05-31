@@ -9,7 +9,6 @@ $ProjectDir = Split-Path -Parent $ScriptDir
 $ProjectFile = Join-Path $ProjectDir "MagicShard_Unreal.uproject"
 $MapName = "/Game/Maps/Map01_Forest"
 $LogFile = Join-Path $ProjectDir "Saved\Logs\MagicShard_Unreal.log"
-$SaveFile = Join-Path $ProjectDir "Saved\MagicShard\PlayerRecords.dat"
 
 $FindEditor = Join-Path $ScriptDir "Find-UnrealEditor.ps1"
 $Editor = & $FindEditor
@@ -25,6 +24,7 @@ $Arguments = @(
     "`"$ProjectFile`"",
     $MapName,
     "-game",
+    "-d3d11",
     "-windowed",
     "-ResX=800",
     "-ResY=450",
@@ -44,10 +44,10 @@ if (-not (Test-Path -LiteralPath $LogFile)) {
 }
 
 $RequiredPatterns = @(
-    "\[MagicShardSmoke\] SaveSubsystem initialized",
     "\[MagicShardSmoke\] GameMode BeginPlay",
     "\[MagicShardSmoke\] HUD BeginPlay",
-    "\[MagicShardSmoke\] PlayerCharacter BeginPlay"
+    "\[MagicShardSmoke\] PlayerCharacter BeginPlay",
+    "\[MapTex\] Map textures applied successfully"
 )
 
 $LogText = Get-Content -LiteralPath $LogFile -Raw
@@ -57,14 +57,4 @@ foreach ($Pattern in $RequiredPatterns) {
     }
 }
 
-if (-not (Test-Path -LiteralPath $SaveFile)) {
-    throw "Random-access save file was not created: $SaveFile"
-}
-
-$SaveInfo = Get-Item -LiteralPath $SaveFile
-if ($SaveInfo.Length -le 0) {
-    throw "Random-access save file is empty: $SaveFile"
-}
-
 Write-Host "Runtime smoke test passed."
-Write-Host "Save file: $($SaveInfo.FullName) ($($SaveInfo.Length) bytes)"

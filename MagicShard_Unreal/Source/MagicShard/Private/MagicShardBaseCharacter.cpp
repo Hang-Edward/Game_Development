@@ -88,17 +88,17 @@ void AMagicShardBaseCharacter::UpdateActionState(float DeltaSeconds)
 {
     (void)DeltaSeconds;
 
-    // 不论是否在地面，都按水平速度决定动作状态。
-    // 这样在空中时角色会保持起跳前的动作（走/跑/待机），
-    // 空中改变方向或速度时也能平滑过渡。
     const float HorizontalSpeed = GetVelocity().Size2D();
-    if (HorizontalSpeed < 5.0f)
+
+    if (bSprinting)
+    {
+        // 冲刺中保持 Run，速度瞬时低于阈值时不切换
+        // 防止地形碰撞导致动画闪烁（Idle→Run→Idle→Run）
+        ActionState = EMagicShardActionState::Run;
+    }
+    else if (HorizontalSpeed < 5.0f)
     {
         ActionState = EMagicShardActionState::Idle;
-    }
-    else if (bSprinting)
-    {
-        ActionState = EMagicShardActionState::Run;
     }
     else
     {

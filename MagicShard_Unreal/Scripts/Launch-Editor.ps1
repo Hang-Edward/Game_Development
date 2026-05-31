@@ -18,4 +18,12 @@ Write-Host "Launching MagicShard Unreal project..."
 Write-Host "Editor: $Editor"
 Write-Host "Project: $ProjectFile"
 
-Start-Process -FilePath $Editor -ArgumentList @("`"$ProjectFile`"")
+$Arguments = @(
+    "`"$ProjectFile`"",
+    "-d3d11",
+    "-NoSound",
+    "-nop4",
+    "-NoLiveCoding"
+)
+
+Start-Process -FilePath $Editor -ArgumentList $Arguments

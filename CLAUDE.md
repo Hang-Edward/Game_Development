@@ -57,6 +57,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `Scripts/ReimportMapAndRebuildWorld.py` | 导入+碰撞+场景完整流程 |
 | `Scripts/Run-ReimportAndRebuild.ps1` | 上述流程的 PowerShell 封装 |
 | `Scripts/Run-RuntimeSmoke.ps1` | 运行时烟雾测试 |
+| `Scripts/FixMapTexturesPermanently.py` | 在 Editor 中运行，永久修复地图纹理材质 |
+| `Scripts/SetupCharacterAnimations.py` | 导入角色动画 + 创建 BlendSpace/AnimBlueprint |
+| `Scripts/DiagnoseRunAnimation.py` | 诊断动画帧数、骨骼差异 |
+| `Scripts/FixRunAnimation.py` | 修复跑步动画循环抽搐 |
 
 ### 地图碰撞设置（重要）
 
@@ -84,10 +88,15 @@ Unity 项目位于 `MagicShard_Unity/`，用于原型验证和资产测试。
 ## 资产
 
 原始 GLB 模型位于 `assets/models/`，通过 Blender 转换为 FBX：
-- `map_01_forest.glb` (304MB, Git LFS) — 第一章地图
+- `map_01_forest.glb` — 第一章地图（当前已是海滩版）
 - `character/{stand,walk,run}.glb` — 主角模型（已转为 FBX）
 - `boss_spider/` — BOSS1
 - `boss3/` — BOSS3
+
+Blender 位于 `D:\应用-Applications\blender.exe`，可用于命令行 FBX 修改：
+```powershell
+"d:\应用-applications\blender.exe" --background --python script.py
+```
 
 ## UE Editor 脚本执行规范
 

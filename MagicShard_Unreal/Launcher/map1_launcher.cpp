@@ -8,7 +8,7 @@
 namespace
 {
 // 这个启动器的目标很单纯：像旧版 map1.exe 一样，一键打开当前 Unreal 项目。
-// 一定要通过 .uproject 启动，否则裸 Unreal Editor 会先加载全局 NNE 插件并可能触发 NPU 崩溃。
+// 默认使用 D3D11，避免本机 UE 5.7 + D3D12 驱动组合在启动时弹 Crash Reporter。
 constexpr const wchar_t* kKnownEditorPath = L"D:\\Unreal Engine 5.7\\UE_5.7\\Engine\\Binaries\\Win64\\UnrealEditor.exe";
 constexpr const wchar_t* kProjectFileName = L"MagicShard_Unreal.uproject";
 
@@ -78,7 +78,7 @@ int wmain()
     if (!std::filesystem::exists(ProjectFile))
     {
         std::wcerr << L"Project file not found: " << ProjectFile.wstring() << L"\n";
-        std::wcerr << L"Please keep map1.exe in the MagicShard_Unreal folder.\n";
+        std::wcerr << L"Please keep main.exe in the MagicShard_Unreal folder.\n";
         return 1;
     }
 
@@ -89,7 +89,7 @@ int wmain()
         return 1;
     }
 
-    const std::wstring Parameters = Quote(ProjectFile);
+    const std::wstring Parameters = Quote(ProjectFile) + L" -d3d11 -NoSound -nop4 -NoLiveCoding";
 
     SHELLEXECUTEINFOW ExecuteInfo{};
     ExecuteInfo.cbSize = sizeof(ExecuteInfo);
@@ -110,5 +110,6 @@ int wmain()
     std::wcout << L"Launching MagicShard Unreal project...\n";
     std::wcout << L"Editor: " << Editor.wstring() << L"\n";
     std::wcout << L"Project: " << ProjectFile.wstring() << L"\n";
+    std::wcout << L"RHI: D3D11\n";
     return 0;
 }

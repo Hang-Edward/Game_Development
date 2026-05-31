@@ -1,12 +1,12 @@
 #include "MagicShardPlayerCharacter.h"
 
-#include "Camera/CameraComponent.h"
-#include "Animation/AnimInstance.h"
 #include "Animation/AnimationAsset.h"
+#include "Animation/AnimSingleNodeInstance.h"
+#include "Camera/CameraComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "MagicShardEntity.h"
-#include "Components/SkeletalMeshComponent.h"
 
 AMagicShardPlayerCharacter::AMagicShardPlayerCharacter()
     : CameraZoomStep(60.0f),
@@ -101,7 +101,10 @@ void AMagicShardPlayerCharacter::ZoomByInput(float WheelValue)
         return;
     }
 
-    DesiredCameraDistance = FMath::Clamp(DesiredCameraDistance - WheelValue * CameraZoomStep, MinCameraDistance, MaxCameraDistance);
+    DesiredCameraDistance = FMath::Clamp(
+        DesiredCameraDistance - WheelValue * CameraZoomStep,
+        MinCameraDistance,
+        MaxCameraDistance);
 }
 
 void AMagicShardPlayerCharacter::BeginSprint()
@@ -134,7 +137,11 @@ void AMagicShardPlayerCharacter::UpdateCameraZoom(float DeltaSeconds)
     }
 
     DesiredCameraDistance = FMath::Clamp(DesiredCameraDistance, MinCameraDistance, MaxCameraDistance);
-    CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, DesiredCameraDistance, DeltaSeconds, CameraZoomSmoothSpeed);
+    CameraBoom->TargetArmLength = FMath::FInterpTo(
+        CameraBoom->TargetArmLength,
+        DesiredCameraDistance,
+        DeltaSeconds,
+        CameraZoomSmoothSpeed);
 }
 
 void AMagicShardPlayerCharacter::ConfigureImportedVisuals()
@@ -163,6 +170,7 @@ void AMagicShardPlayerCharacter::ConfigureImportedVisuals()
             MeshComp->SetAnimationMode(EAnimationMode::AnimationSingleNode);
             MeshComp->SetAnimation(IdleAnimation);
             MeshComp->Play(true);
+            LastVisualActionState = EMagicShardActionState::Idle;
         }
     }
 }
@@ -187,9 +195,14 @@ void AMagicShardPlayerCharacter::UpdateVisualAnimation()
 
     if (NextAnimation != nullptr)
     {
-
         MeshComp->SetAnimation(NextAnimation);
         MeshComp->Play(true);
+
+        if (UAnimSingleNodeInstance* SingleNode = MeshComp->GetSingleNodeInstance())
+        {
+            SingleNode->SetLooping(true);
+        }
+
         LastVisualActionState = ActionState;
     }
 }
