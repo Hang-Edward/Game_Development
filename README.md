@@ -1,85 +1,69 @@
 # 魔法碎片：暗蚀纪元
 
-3D 开放世界冒险游戏 — Unreal Engine 5.7 (C++)。
+3D 第三人称动作冒险项目。当前主线已经迁移到 Unreal Engine，旧的 Unity 原型和 raylib / GLB 资产目录已经从仓库中清理。
 
-## 环境要求
+## 当前主线
 
-| 工具 | 版本 |
-|------|------|
-| Unreal Engine | 5.7 |
-| Python | 3.x (UE 内置) |
-| Git (LFS) | 任意版本 |
+- 引擎：Unreal Engine 5.7
+- 语言：C++
+- 项目目录：`MagicShard_Unreal/`
+- 可执行启动器：`MagicShard_Unreal/map1.exe`
+- 主要资产格式：后续统一使用 FBX 导入 Unreal
 
 ## 快速开始
 
-### 克隆仓库
-
-```bash
-git lfs install
-git clone <仓库地址>
-cd Game_Development
+```powershell
+cd MagicShard_Unreal
+.\map1.exe
 ```
 
-### 一键构建
+如果需要打开 Unreal Editor：
 
 ```powershell
 cd MagicShard_Unreal
-.\Scripts\Run-ReimportAndRebuild.ps1   # 导入资产+碰撞+场景
+.\Scripts\Launch-Editor.ps1
 ```
 
-### 运行
+如果需要重新编译 C++：
 
 ```powershell
-.\map1.exe   # 第一章（银风森林）
-```
-
-### 构建（C++ 编译）
-
-```powershell
+cd MagicShard_Unreal
 .\Scripts\Build-Unreal.ps1
 ```
 
-## 操作说明
-
-| 操作 | 按键 |
-|------|------|
-| 移动 | WASD |
-| 视角 | 鼠标滑动 |
-| 缩放 | 滚轮 |
-| 跳跃 | Space |
-| 冲刺 | Shift |
-| 蹲下 | Ctrl |
-| 攻击 | 左键 |
-| 格挡 | 右键 |
-| 释放鼠标 | ESC |
-
 ## 项目结构
 
-```
+```text
 MagicShard_Unreal/
 ├── Source/MagicShard/          # C++ 游戏模块
 │   ├── Public/                 # 头文件
-│   └── Private/                # 实现文件
-├── Content/                    # UE 资产（.uasset/.umap）
-│   └── Imported/               # 导入的 FBX 资产
-├── Scripts/                    # 构建/导入脚本
-│   ├── Build-Unreal.ps1         # 编译 C++ 项目
-│   ├── Build-Launcher.ps1       # 生成 map#.exe
-│   ├── ImportLegacyAssets.py    # 导入 Unity 项目的 FBX
-│   ├── SetupImportedWorld.py    # 重建关卡场景
-│   └── FixMapCollision.py       # 修复地形碰撞
-├── Config/                     # 项目配置
-└── MagicShard_Unreal.uproject  # UE 项目文件
+│   └── Private/                # cpp 实现
+├── Content/                    # Unreal 资产与关卡
+├── Config/                     # Unreal 项目配置
+├── Scripts/                    # 构建、启动、验证脚本
+├── Launcher/                   # map1.exe 启动器源码
+└── MagicShard_Unreal.uproject  # Unreal 项目文件
 ```
 
-## 资产
+## 常用脚本
 
-原始 GLB 模型位于 `assets/models/`，通过 Blender 转换为 FBX：
-- `assets/models/map_01_forest.glb` (304MB, Git LFS)
-- `assets/models/character/{stand,walk,run}.glb`
-- `assets/models/boss_spider/` (idle, walk, attack)
-- `assets/models/boss3/` (static, move, attack1-3, defense, die, stepback)
+| 脚本 | 用途 |
+|------|------|
+| `Scripts/Build-Unreal.ps1` | 编译 Unreal C++ 项目 |
+| `Scripts/Build-Launcher.ps1` | 生成 `map1.exe` 启动器 |
+| `Scripts/Launch-Editor.ps1` | 使用项目配置启动 Unreal Editor |
+| `Scripts/Run-RuntimeSmoke.ps1` | 运行时烟雾测试 |
+| `Scripts/FixMapCollision.py` | 修复地图 StaticMesh 碰撞设置 |
+| `Scripts/FixRunAnimation.py` | 修复 Run 动画循环问题 |
+| `Scripts/DiagnoseRunAnimation.py` | 诊断 Run 动画帧与骨骼差异 |
+| `Scripts/SetupImportedWorld.py` | 基于已导入资产重建测试关卡 |
 
-## 参考项目
+## 资产约定
 
-`MagicShard_Unity/` — Unity 2022.3 LTS 原型（C#），用于早期验证和资产测试。
+旧的 `assets/models/` GLB 目录和 `MagicShard_Unity/` Unity 原型已经删除。后续角色、敌人和地图资产请优先提供 FBX：
+
+- 角色和敌人：网格 + 骨架 + 动画，骨架命名和朝向保持一致。
+- 地图：静态网格 FBX，材质贴图单独提供 PNG/TGA 等常规纹理文件。
+- 音效：`.wav` 或 `.ogg`。
+
+导入 Unreal 前，优先先用检查脚本确认 FBX 的骨架、网格、动画帧和轴向设置。

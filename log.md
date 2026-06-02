@@ -388,3 +388,13 @@ cd build
 - HUD 状态显示（HP/MP/速度/状态）
 - 实体系统（HeroEntity 管理 HP/MP/碎片）
 - 魔法碎片拾取物（ShardPickup）
+
+---
+
+### v0.8 - Cleanup Unity and legacy GLB assets
+
+- Removed the old `MagicShard_Unity/` Unity prototype from the repository.
+- Removed the old root `assets/` GLB model directory.
+- Removed Unreal helper scripts that depended on `MagicShard_Unity/` as an asset source.
+- Updated project documentation so `MagicShard_Unreal/` is the single active development line.
+- Future character, enemy, and map assets should be imported as new FBX files for Unreal.
